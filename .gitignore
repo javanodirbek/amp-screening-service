@@ -1,0 +1,174 @@
+# =============================================================================
+# AML Screening Service — .gitignore
+# =============================================================================
+# Goal: keep the repo clean and safe for public hosting / free tier deploys
+# (Fly.io, Koyeb, Render, Railway, etc.)
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# Java / Gradle build artifacts
+# -----------------------------------------------------------------------------
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+.gradle/
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# Keep the Gradle Wrapper JAR (required to build on CI / Fly / Koyeb)
+!gradle/wrapper/gradle-wrapper.jar
+
+
+# -----------------------------------------------------------------------------
+# IntelliJ IDEA / Eclipse / VS Code / NetBeans
+# -----------------------------------------------------------------------------
+.idea/
+*.iws
+*.iml
+*.ipr
+
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+
+.vscode/
+
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/.nb-gradle/
+
+
+# -----------------------------------------------------------------------------
+# Operating system junk
+# -----------------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+
+# -----------------------------------------------------------------------------
+# Logs
+# -----------------------------------------------------------------------------
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+
+# -----------------------------------------------------------------------------
+# Secrets & local environment configs (NEVER commit)
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# Spring local / dev / secret profile overrides
+application-local.properties
+application-local.yml
+application-local.yaml
+application-dev.properties
+application-secret.properties
+application-secrets.yml
+
+# Keys, certs, tokens
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+*.truststore
+secrets/
+secrets.json
+
+
+# -----------------------------------------------------------------------------
+# Database / data dumps
+# -----------------------------------------------------------------------------
+*.sql.gz
+*.dump
+*.bak
+postgres_data/
+pgdata/
+data/
+
+
+# -----------------------------------------------------------------------------
+# Node / React frontend
+# -----------------------------------------------------------------------------
+node_modules/
+front/node_modules/
+
+# Build output (regenerated on the server)
+front/build/
+front/dist/
+
+# Caches
+.eslintcache
+.parcel-cache/
+.cache/
+.npm/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Coverage / tests
+coverage/
+.nyc_output/
+
+
+# -----------------------------------------------------------------------------
+# Docker (keep Dockerfile + docker-compose.yml committed; ignore overrides)
+# -----------------------------------------------------------------------------
+docker-compose.override.yml
+.dockerignore.local
+
+
+# -----------------------------------------------------------------------------
+# Deploy tooling (keep fly.toml committed, ignore local state)
+# -----------------------------------------------------------------------------
+.fly/
+.flyctl/
+.vercel/
+.netlify/
+
+
+# -----------------------------------------------------------------------------
+# Misc
+# -----------------------------------------------------------------------------
+HELP.md
+*.tmp
+*.swp
+*.swo
+*~
+.history/

@@ -1,0 +1,615 @@
+================================================================
+  LOVEABLE AI UCHUN PROMPT
+  AML Screening & Transaction Monitoring Service — Frontend
+  Bu promptni Loveable.dev ga to'liq copy-paste qiling
+================================================================
+
+Build a complete React.js frontend application for an AML (Anti-Money Laundering)
+Screening & Transaction Monitoring Service. This is a banking compliance system
+used by bank employees to monitor financial transactions and check them against
+sanctioned persons lists.
+
+================================================================
+TECH STACK
+================================================================
+
+- React.js with functional components and hooks
+- React Router v6 for navigation
+- Axios for API calls
+- Bootstrap 5 for styling
+- No TypeScript — plain JavaScript only
+
+================================================================
+BACKEND API DETAILS
+================================================================
+
+Base URL: http://localhost:7777
+All requests (except login) require header:
+  Authorization: Bearer {accessToken}
+
+The backend returns TokenResponse on login:
+  { "accessToken": "eyJ...", "refreshToken": "eyJ..." }
+
+Store accessToken in localStorage under key "accessToken"
+Store user role and username in localStorage after decoding or from login context
+
+================================================================
+ALL API ENDPOINTS — EXACT URLS
+================================================================
+
+AUTH:
+  POST /auth/login
+    Body: { "username": "string", "password": "string" }
+    Response: { "accessToken": "string", "refreshToken": "string" }
+    No Authorization header needed
+
+  POST /auth/register    (ADMIN only)
+    Header: Authorization: Bearer {token}
+    Body: { "name": "string", "password": "string", "email": "string", "role": "ADMIN|OPERATOR|COMPLIANCE_OFFICER" }
+    Response: Long (user ID)
+
+BLACKLIST:
+  POST /blacklist    (ADMIN only)
+    Body: { "fullName": "string", "birthDate": "YYYY-MM-DD", "passportNumber": "string", "inn": "string", "listType": "TERRORIST|EXTREMIST|SANCTIONS_RU|SANCTIONS_EU|ROSFINMONITORING" }
+    Response: Long (entry ID)
+
+  GET /blacklist?status=ACTIVE&page=0&size=10
+    Response: Spring Page object:
+    {
+      "content": [ BlacklistEntryResponse array ],
+      "totalElements": number,
+      "totalPages": number,
+      "number": number,
+      "size": number
+    }
+
+  GET /blacklist/{id}
+    Response: BlacklistEntryResponse
+
+  PATCH /blacklist/{id}    (ADMIN, COMPLIANCE_OFFICER)
+    Body: same as POST
+
+  DELETE /blacklist/{id}    (ADMIN) — sets status=INACTIVE, not real delete
+    Response: Boolean (true)
+
+  POST /blacklist/import    (ADMIN only)
+    Body: { "entries": [ array of BlacklistEntryRequest ] }
+    Response: { "imported": number, "skipped": number, "errors": number, "errorMessages": ["string"] }
+
+CLIENTS:
+  POST /clients    (ADMIN, OPERATOR)
+    Body: { "fullName": "string", "birthDate": "YYYY-MM-DD", "passportNumber": "string", "inn": "string", "phone": "string", "email": "string" }
+    Response: Long (client ID)
+
+  GET /clients
+    Response: Array of ClientResponse
+
+  GET /clients/{id}
+    Response: ClientResponse
+
+TRANSACTIONS:
+  POST /transactions    (ADMIN, OPERATOR)
+    Body: { "clientId": number, "recipientName": "string", "recipientPassport": "string", "amount": number, "currency": "RUB|USD|EUR" }
+    Response: Long (transaction ID)
+    Note: screening starts automatically after creation
+
+  GET /transactions?status=PENDING&page=0&size=10
+    Response: Spring Page object with TransactionResponse array
+
+  GET /transactions/{id}
+    Response: TransactionResponse (includes checkResult)
+
+REVIEW:
+  POST /transactions/{id}/submit-review    (ADMIN, OPERATOR, COMPLIANCE_OFFICER)
+    No body needed
+    Response: TransactionResponse
+
+  POST /transactions/{id}/approve    (COMPLIANCE_OFFICER only)
+    Body: { "comment": "string" }
+    Response: TransactionResponse
+
+  POST /transactions/{id}/reject    (COMPLIANCE_OFFICER only)
+    Body: { "comment": "string" }
+    Response: TransactionResponse
+
+================================================================
+RESPONSE OBJECT SHAPES
+================================================================
+
+BlacklistEntryResponse:
+{
+  "id": number,
+  "fullName": "string",
+  "birthDate": "YYYY-MM-DD",
+  "passportNumber": "string",
+  "inn": "string",
+  "listType": "TERRORIST|EXTREMIST|SANCTIONS_RU|SANCTIONS_EU|ROSFINMONITORING",
+  "status": "ACTIVE|INACTIVE",
+  "addedAt": "datetime string",
+  "updatedAt": "datetime string",
+  "addedBy": "string"
+}
+
+ClientResponse:
+{
+  "id": number,
+  "fullName": "string",
+  "birthDate": "datetime string",
+  "passportNumber": "string",
+  "inn": "string",
+  "email": "string",
+  "phone": "string",
+  "status": "ACTIVE|BLOCKED|PENDING_REVIEW",
+  "createdAt": "datetime string"
+}
+
+TransactionResponse:
+{
+  "id": number,
+  "clientId": number,
+  "clientName": "string",
+  "recipientName": "string",
+  "recipientPassport": "string",
+  "amount": number,
+  "currency": "string",
+  "status": "PENDING|CHECKING|CLEAR|BLOCKED_AUTO|UNDER_REVIEW|APPROVED|REJECTED",
+  "createdAt": "datetime string",
+  "updatedAt": "datetime string",
+  "reviewedBy": "string",
+  "reviewComment": "string",
+  "checkResult": {
+    "id": number,
+    "result": "HIT|CLEAR",
+    "matchScore": number,
+    "threshold": number,
+    "algorithm": "string",
+    "checkDate": "string",
+    "matchedEntryId": number,
+    "matchedEntryName": "string"
+  }
+}
+
+Error responses from backend:
+{ "message": ["error text here"] }
+
+================================================================
+USER ROLES AND PERMISSIONS
+================================================================
+
+ADMIN can:
+  - Login
+  - Register new users (all roles)
+  - Create, view, update, delete blacklist entries
+  - Bulk import blacklist from JSON
+  - Create and view clients
+  - Create and view transactions
+  - Submit transaction for review
+
+OPERATOR can:
+  - Login
+  - View blacklist entries
+  - Create and view clients
+  - Create and view transactions
+  - Submit transaction for review
+
+COMPLIANCE_OFFICER can:
+  - Login
+  - View blacklist entries
+  - View clients
+  - View transactions
+  - Submit transaction for review
+  - Approve transactions
+  - Reject transactions
+
+================================================================
+TRANSACTION STATUS LIFECYCLE
+================================================================
+
+PENDING → CHECKING → CLEAR (auto, no match found)
+PENDING → CHECKING → BLOCKED_AUTO (auto, match found with score >= 0.80)
+BLOCKED_AUTO → UNDER_REVIEW (manual, any role)
+UNDER_REVIEW → APPROVED (COMPLIANCE_OFFICER only)
+UNDER_REVIEW → REJECTED (COMPLIANCE_OFFICER only)
+
+================================================================
+APPLICATION STRUCTURE — BUILD EXACTLY THIS
+================================================================
+
+src/
+├── api/
+│   └── axios.js          ← Axios instance with base URL and interceptors
+├── context/
+│   └── AuthContext.js    ← Login state, role, token management
+├── pages/
+│   ├── LoginPage.js
+│   ├── DashboardPage.js
+│   ├── BlacklistPage.js
+│   ├── ClientsPage.js
+│   ├── TransactionsPage.js
+│   ├── ImportPage.js
+│   └── UsersPage.js      ← Only for ADMIN
+├── components/
+│   ├── Navbar.js
+│   ├── Sidebar.js
+│   ├── PrivateRoute.js
+│   ├── StatusBadge.js
+│   ├── Pagination.js
+│   └── ConfirmModal.js
+└── App.js
+
+================================================================
+DETAILED REQUIREMENTS FOR EACH FILE
+================================================================
+
+--- api/axios.js ---
+Create an Axios instance:
+  baseURL: "http://localhost:7777"
+  Add request interceptor: read token from localStorage.getItem("accessToken")
+  If token exists, add header: Authorization: Bearer {token}
+  Add response interceptor: if status 401, clear localStorage and redirect to /login
+
+--- context/AuthContext.js ---
+Context with:
+  - user state: { username, role, accessToken }
+  - login(username, password) function:
+      calls POST /auth/login
+      saves accessToken and refreshToken to localStorage
+      saves username and role to state and localStorage
+      Note: role is NOT in the token response — you need to decode the JWT
+      to get the role OR save it separately. After login, make a test call
+      or parse the JWT payload (base64 decode middle part) to find role claim.
+      Actually: the token contains "role" claim with value "ROLE_ADMIN" etc.
+      Parse JWT: const payload = JSON.parse(atob(token.split('.')[1]))
+      Then role = payload.role or payload.authorities[0]
+  - logout() function: clears localStorage, redirects to /login
+  - isAuthenticated: boolean
+  - hasRole(role) function: check if user has specific role
+
+--- App.js ---
+Routes:
+  /login → LoginPage (public)
+  / → redirect to /dashboard
+  /dashboard → DashboardPage (all authenticated)
+  /blacklist → BlacklistPage (all authenticated)
+  /clients → ClientsPage (ADMIN, OPERATOR)
+  /transactions → TransactionsPage (all authenticated)
+  /import → ImportPage (ADMIN only)
+  /users → UsersPage (ADMIN only)
+
+Use PrivateRoute component to protect routes.
+
+--- components/PrivateRoute.js ---
+Checks if user is authenticated.
+If not → redirect to /login
+Optionally accepts "roles" prop to check role-based access.
+If role doesn't match → show "Access Denied" message or redirect.
+
+--- components/Navbar.js ---
+Top navigation bar:
+  Left: "AML Screening Service" logo/title
+  Right: show current username and role badge, Logout button
+
+--- components/Sidebar.js ---
+Left sidebar with navigation links:
+  - Dashboard (all roles)
+  - Transactions (all roles)
+  - Blacklist (all roles)
+  - Clients (ADMIN, OPERATOR only — hide for COMPLIANCE_OFFICER)
+  - Import JSON (ADMIN only)
+  - Users (ADMIN only)
+  - Show screening threshold: 80%
+  Active link should be highlighted
+
+--- components/StatusBadge.js ---
+Render colored Bootstrap badge based on status string:
+  CLEAR → success (green)
+  BLOCKED_AUTO → danger (red)
+  UNDER_REVIEW → warning (yellow)
+  PENDING → secondary (gray)
+  CHECKING → info (blue)
+  APPROVED → success (green)
+  REJECTED → danger (red)
+  ACTIVE → success
+  INACTIVE → secondary
+  HIT → danger (red)
+
+--- pages/LoginPage.js ---
+Centered login form:
+  - AML Service logo/title at top
+  - Username input field
+  - Password input field (type="password")
+  - Login button
+  - Show error message if login fails (display backend error message)
+  - Show loading spinner while request is pending
+  - After successful login → redirect to /dashboard
+
+--- pages/DashboardPage.js ---
+Show statistics summary:
+  Make these API calls:
+    GET /transactions → count by status
+    GET /blacklist?status=ACTIVE → count active entries
+    GET /clients → count total clients
+
+  Show 4 stat cards:
+    1. Total Transactions (count from transactions)
+    2. Blocked (count transactions with status BLOCKED_AUTO)
+    3. Under Review (count transactions with status UNDER_REVIEW)
+    4. Active Blacklist Entries (count from blacklist)
+
+  Show a table: Last 10 transactions (GET /transactions?page=0&size=10)
+  Columns: ID, Client, Recipient, Amount, Currency, Status, Date
+  Status column uses StatusBadge component
+  Clicking a row → navigate to /transactions (or show detail modal)
+
+--- pages/BlacklistPage.js ---
+Show blacklist entries with full CRUD:
+
+  TOP SECTION:
+    - Title "Санкционный список"
+    - Search/filter: dropdown for status (ALL, ACTIVE, INACTIVE)
+      and dropdown for listType (ALL, TERRORIST, EXTREMIST, SANCTIONS_RU, SANCTIONS_EU, ROSFINMONITORING)
+    - "Add Entry" button (only show for ADMIN)
+
+  TABLE with columns:
+    ID | Full Name | Passport | INN | List Type | Status | Added By | Added Date | Actions
+
+  Actions column:
+    - "Edit" button (ADMIN, COMPLIANCE_OFFICER only)
+    - "Deactivate" button showing as "Delete" (ADMIN only) — calls DELETE /blacklist/{id}
+      Show confirm dialog before deleting
+
+  PAGINATION:
+    Page controls at bottom, show current page / total pages
+
+  ADD/EDIT MODAL (Bootstrap modal):
+    Form fields:
+      - Full Name (required text input)
+      - Birth Date (date input)
+      - Passport Number (text input)
+      - INN (text input, max 12 chars)
+      - List Type (dropdown: TERRORIST, EXTREMIST, SANCTIONS_RU, SANCTIONS_EU, ROSFINMONITORING)
+    Buttons: Cancel, Save
+    On save → POST /blacklist (create) or PATCH /blacklist/{id} (edit)
+    Show success/error message after save
+
+  DETAIL MODAL:
+    Click on a row → show all details of the entry
+
+--- pages/ClientsPage.js ---
+Show clients list (ADMIN, OPERATOR access):
+
+  TOP SECTION:
+    - Title "Клиенты"
+    - "Add Client" button (ADMIN, OPERATOR only)
+
+  TABLE with columns:
+    ID | Full Name | Passport | Phone | Email | Status | Created Date | Actions
+
+  Actions column:
+    - "View" button → show client detail + their transactions
+
+  ADD CLIENT MODAL:
+    Form fields:
+      - Full Name (required)
+      - Birth Date (date)
+      - Passport Number
+      - INN
+      - Phone
+      - Email
+    On save → POST /clients
+
+  CLIENT DETAIL MODAL:
+    Show all client info
+    Show their recent transactions (GET /transactions filtered by checking clientId manually
+    from the transactions list — or just show all transactions and let user see clientName)
+
+--- pages/TransactionsPage.js ---
+This is the MAIN page — most important:
+
+  TOP SECTION:
+    - Title "Транзакции"
+    - Status filter dropdown (ALL, PENDING, CHECKING, CLEAR, BLOCKED_AUTO, UNDER_REVIEW, APPROVED, REJECTED)
+    - "Create Transaction" button (ADMIN, OPERATOR only)
+    - Refresh button
+
+  TABLE with columns:
+    ID | Client Name | Recipient Name | Amount | Currency | Status | Match Score | Created Date | Actions
+
+  Match Score column:
+    If checkResult exists and result is HIT → show score as percentage in red (e.g., "87%")
+    If CLEAR → show score in green
+    If no checkResult yet → show "-"
+
+  Actions column (show buttons based on transaction status AND user role):
+    - "Details" button → always show, opens detail modal
+    - "Submit for Review" button → show only if status=BLOCKED_AUTO AND role is ADMIN/OPERATOR/COMPLIANCE_OFFICER
+    - "Approve" button → show only if status=UNDER_REVIEW AND role is COMPLIANCE_OFFICER
+    - "Reject" button → show only if status=UNDER_REVIEW AND role is COMPLIANCE_OFFICER
+
+  CREATE TRANSACTION MODAL:
+    Form fields:
+      - Client (dropdown — load from GET /clients, show fullName)
+      - Recipient Name (required text input)
+      - Recipient Passport (text input)
+      - Amount (number input, positive)
+      - Currency (dropdown: RUB, USD, EUR)
+    On save → POST /transactions
+    After save → show result message and reload list
+    If transaction comes back as BLOCKED_AUTO → show warning alert
+
+  TRANSACTION DETAIL MODAL:
+    Show all transaction fields
+    Show CheckResult section if exists:
+      - Result: HIT or CLEAR (with colored badge)
+      - Match Score: shown as percentage (e.g., 87.3%)
+      - Threshold: 80%
+      - Matched Person: show matchedEntryName if HIT (link to blacklist)
+      - Algorithm used
+      - Check Date
+
+  APPROVE MODAL:
+    Comment textarea (required)
+    Confirm button → POST /transactions/{id}/approve
+
+  REJECT MODAL:
+    Comment textarea (required)
+    Confirm button → POST /transactions/{id}/reject
+
+  PAGINATION:
+    Page controls at bottom
+
+--- pages/ImportPage.js ---
+ADMIN only page for bulk import:
+
+  Title: "Массовый импорт в чёрный список"
+
+  Two sections:
+
+  SECTION 1 — JSON File Upload:
+    - Drag and drop zone OR file input (accept .json files)
+    - Instructions: "Upload a JSON file with array of entries"
+    - Show expected JSON format as example:
+      {
+        "entries": [
+          {
+            "fullName": "Иванов Иван Иванович",
+            "birthDate": "1980-05-15",
+            "passportNumber": "4510 123456",
+            "listType": "TERRORIST"
+          }
+        ]
+      }
+    - After file selected → parse JSON → show preview table of entries
+    - "Import" button → POST /blacklist/import with parsed data
+    - Show result: "Imported: X, Skipped: Y, Errors: Z"
+    - If errors → show errorMessages list
+
+  SECTION 2 — Manual Bulk Add:
+    - Table with editable rows
+    - User can add multiple rows manually (Add Row button)
+    - Each row: Full Name, Birth Date, Passport, List Type
+    - "Import All" button → POST /blacklist/import
+
+--- pages/UsersPage.js ---
+ADMIN only — manage system users:
+
+  Title: "Пользователи системы"
+  "Add User" button
+
+  TABLE with columns:
+    ID | Username | Email | Role | Created Date | Actions
+
+  ADD USER MODAL:
+    Form fields:
+      - Username (required, min 3 chars)
+      - Password (required, min 8 chars)
+      - Email
+      - Role (dropdown: ADMIN, OPERATOR, COMPLIANCE_OFFICER)
+    On save → POST /auth/register
+
+================================================================
+UI DESIGN REQUIREMENTS
+================================================================
+
+Color scheme:
+  Primary: #1E3A5F (dark navy blue)
+  Accent: #2E86C1 (medium blue)
+  Background: #F4F6F7 (light gray)
+  Sidebar: #1E3A5F (dark navy)
+  Sidebar text: white
+  Active sidebar link: #2E86C1
+
+Status badge colors (Bootstrap):
+  CLEAR/APPROVED/ACTIVE → badge bg-success
+  BLOCKED_AUTO/REJECTED/INACTIVE/HIT → badge bg-danger
+  UNDER_REVIEW → badge bg-warning text-dark
+  PENDING → badge bg-secondary
+  CHECKING → badge bg-info
+
+Layout:
+  - Fixed sidebar on the left (width: 220px)
+  - Top navbar with user info
+  - Main content area takes remaining width
+  - All tables use Bootstrap table-striped table-hover
+  - All modals use Bootstrap Modal
+  - Loading spinners when fetching data
+  - Toast notifications for success/error messages
+
+Error handling:
+  - If API returns { "message": ["error text"] } → display the message[0]
+  - Show error in red alert box inside modal or page
+  - If 401 → redirect to login
+  - If 403 → show "Access Denied" message
+
+================================================================
+IMPORTANT IMPLEMENTATION NOTES
+================================================================
+
+1. Token Storage:
+   localStorage.setItem("accessToken", token)
+   localStorage.setItem("refreshToken", refreshToken)
+   localStorage.setItem("username", username)
+   localStorage.setItem("role", role)  ← extract from JWT payload
+
+2. JWT Role Extraction:
+   After login, decode the JWT:
+   const payload = JSON.parse(atob(accessToken.split('.')[1]))
+   The role is in payload.role as "ROLE_ADMIN" or "ROLE_OPERATOR" or "ROLE_COMPLIANCE_OFFICER"
+   Store just "ADMIN", "OPERATOR", or "COMPLIANCE_OFFICER" (remove "ROLE_" prefix)
+
+3. Role-Based UI:
+   Create a helper: const hasRole = (role) => localStorage.getItem("role") === role
+   Hide/show buttons and menu items based on role
+   Example: {hasRole("ADMIN") && <button>Add Entry</button>}
+
+4. Pagination:
+   The backend returns Spring Page format:
+   { content: [], totalElements: N, totalPages: N, number: 0, size: 10 }
+   Use "number" field as current page (0-indexed)
+   Send ?page=0&size=10 as query params
+
+5. Date formatting:
+   Backend sends dates as "2025-01-15T10:30:00" format
+   Format for display: use toLocaleDateString() or simple string split
+
+6. Amount formatting:
+   Show amounts with number.toLocaleString("ru-RU") + " " + currency
+   Example: "150 000 ₽" or "150,000 RUB"
+
+7. Sidebar active state:
+   Use React Router's useLocation() to check current path
+   Apply "active" class or different background to current route
+
+8. Auto-refresh on TransactionsPage:
+   Add a "Refresh" button to manually reload data
+   Consider auto-refresh every 30 seconds for CHECKING status transactions
+
+9. Form validation:
+   Do client-side validation before API call:
+   - Required fields check
+   - Amount must be positive number
+   - Currency must be 3 uppercase letters
+   Show validation errors inline
+
+10. CORS:
+    The backend already has CORS configured for localhost:7777 and localhost:8080
+    Run the React app on port 3000 with:
+    Change the CORS config or proxy in package.json:
+    "proxy": "http://localhost:7777"
+    If using proxy, use relative URLs: "/auth/login" instead of full URL
+
+================================================================
+START BUILDING
+================================================================
+
+Build all pages and components described above.
+Make sure every button connects to the correct API endpoint.
+Make sure role-based visibility works correctly.
+Make sure error messages from backend are displayed to the user.
+Make sure loading states are handled with spinners.
+Make sure pagination works on blacklist and transactions pages.
+
+The application should work seamlessly with the Spring Boot backend
+running on http://localhost:7777
+
+================================================================

@@ -1,0 +1,3444 @@
+================================================================================
+AML SCREENING SERVICE — ZAMONAVIY DIZAYN (TO'LIQ QAYTA YOZILGAN)
+Barcha frontend fayillari — o'sha strukturada, yangi dizayn bilan
+================================================================================
+
+================================================================================
+FILE: front/package.json
+================================================================================
+{
+  "name": "aml-screening-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "axios": "^1.7.0",
+    "bootstrap": "^5.3.0",
+    "bootstrap-icons": "^1.11.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "react-scripts": "5.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build"
+  },
+  "browserslist": {
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+  }
+}
+
+================================================================================
+FILE: front/public/index.html
+================================================================================
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>АМЛ Скрининг — Финансовый Мониторинг</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="root"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+================================================================================
+FILE: front/src/index.js
+================================================================================
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import App from './App';
+import './App.css';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <BrowserRouter>
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  </BrowserRouter>
+);
+
+================================================================================
+FILE: front/src/App.js
+================================================================================
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
+import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import BlacklistPage from './pages/BlacklistPage';
+import ClientsPage from './pages/ClientsPage';
+import TransactionsPage from './pages/TransactionsPage';
+import ImportPage from './pages/ImportPage';
+import UsersPage from './pages/UsersPage';
+
+function AppLayout({ children }) {
+  return (
+    <div className="app-layout">
+      <Navbar />
+      <div className="app-body">
+        <Sidebar />
+        <main className="main-content">
+          <div className="content-wrapper">
+            {children}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <Routes>
+      <Route path="/login" element={
+        isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />
+      } />
+      <Route path="/dashboard" element={
+        <PrivateRoute><AppLayout><DashboardPage /></AppLayout></PrivateRoute>
+      } />
+      <Route path="/blacklist" element={
+        <PrivateRoute><AppLayout><BlacklistPage /></AppLayout></PrivateRoute>
+      } />
+      <Route path="/clients" element={
+        <PrivateRoute roles={['ADMIN', 'OPERATOR']}><AppLayout><ClientsPage /></AppLayout></PrivateRoute>
+      } />
+      <Route path="/transactions" element={
+        <PrivateRoute><AppLayout><TransactionsPage /></AppLayout></PrivateRoute>
+      } />
+      <Route path="/import" element={
+        <PrivateRoute roles={['ADMIN']}><AppLayout><ImportPage /></AppLayout></PrivateRoute>
+      } />
+      <Route path="/users" element={
+        <PrivateRoute roles={['ADMIN']}><AppLayout><UsersPage /></AppLayout></PrivateRoute>
+      } />
+      <Route path="*" element={<Navigate to="/dashboard" />} />
+    </Routes>
+  );
+}
+
+================================================================================
+FILE: front/src/App.css
+================================================================================
+/* ============================================================
+   AML SCREENING SERVICE — ZAMONAVIY DIZAYN
+   Rosfinmonitoring uslubida professional government UI
+   ============================================================ */
+
+:root {
+  --primary:        #0D2137;
+  --primary-light:  #162E47;
+  --accent:         #1565C0;
+  --accent-hover:   #0D47A1;
+  --accent-light:   #E3F2FD;
+  --danger:         #C62828;
+  --danger-light:   #FFEBEE;
+  --success:        #1B5E20;
+  --success-light:  #E8F5E9;
+  --warning:        #E65100;
+  --warning-light:  #FFF3E0;
+  --sidebar-width:  260px;
+  --navbar-height:  64px;
+  --bg:             #F0F2F5;
+  --card-bg:        #FFFFFF;
+  --border:         #DDE3EC;
+  --text-primary:   #0D1B2A;
+  --text-secondary: #546E7A;
+  --text-muted:     #90A4AE;
+  --shadow-sm:      0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:      0 4px 12px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg:      0 10px 30px rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.08);
+  --radius-sm:      6px;
+  --radius-md:      10px;
+  --radius-lg:      16px;
+  --transition:     all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== LAYOUT ===== */
+.app-layout { display: flex; flex-direction: column; min-height: 100vh; }
+.app-body { display: flex; flex: 1; padding-top: var(--navbar-height); }
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  min-height: calc(100vh - var(--navbar-height));
+  overflow-x: hidden;
+}
+.content-wrapper { padding: 28px 32px; max-width: 1400px; }
+
+/* ===== NAVBAR ===== */
+.navbar-top {
+  background: var(--primary);
+  color: white;
+  padding: 0 28px;
+  height: var(--navbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1050;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+
+.navbar-brand-area {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.navbar-emblem {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #C62828, #B71C1C);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(198,40,40,0.4);
+  flex-shrink: 0;
+}
+
+.navbar-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar-title-main {
+  color: white;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.navbar-title-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.navbar-datetime {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.3;
+}
+
+.navbar-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 24px;
+  padding: 5px 14px 5px 5px;
+}
+
+.user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #42A5F5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  flex-shrink: 0;
+}
+
+.user-info { display: flex; flex-direction: column; line-height: 1.2; }
+.user-name { font-size: 13px; color: white; font-weight: 500; }
+.user-role {
+  font-size: 10px;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.btn-logout {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.8);
+  border: 1px solid rgba(255,255,255,0.15);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-logout:hover {
+  background: rgba(198,40,40,0.6);
+  border-color: rgba(198,40,40,0.4);
+  color: white;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--primary);
+  position: fixed;
+  top: var(--navbar-height);
+  left: 0;
+  bottom: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 1040;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+.sidebar-section-label {
+  padding: 20px 20px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: rgba(255,255,255,0.65);
+  text-decoration: none;
+  padding: 11px 20px;
+  font-size: 13.5px;
+  font-weight: 450;
+  transition: var(--transition);
+  border-left: 3px solid transparent;
+  margin: 1px 0;
+  position: relative;
+}
+
+.sidebar-link:hover {
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.9);
+  border-left-color: rgba(255,255,255,0.2);
+}
+
+.sidebar-link.active {
+  background: rgba(21,101,192,0.25);
+  color: #90CAF9;
+  border-left-color: #1565C0;
+  font-weight: 500;
+}
+
+.sidebar-link .bi {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.sidebar-link .link-badge {
+  margin-left: auto;
+  background: var(--accent);
+  color: white;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+  margin: 10px 16px;
+}
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+
+.sidebar-threshold {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(21,101,192,0.15);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(21,101,192,0.25);
+}
+
+.threshold-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4CAF50;
+  box-shadow: 0 0 6px rgba(76,175,80,0.6);
+  flex-shrink: 0;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.threshold-text { font-size: 11px; color: rgba(255,255,255,0.5); }
+.threshold-value { font-size: 11px; font-weight: 600; color: #81C784; margin-left: auto; }
+
+/* ===== LOGIN PAGE ===== */
+.login-page {
+  display: flex;
+  min-height: 100vh;
+  background: var(--primary);
+}
+
+.login-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 60px 80px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0A1628 0%, #0D2137 60%, #162E47 100%);
+}
+
+.login-left::before {
+  content: '';
+  position: absolute;
+  top: -100px; right: -100px;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(21,101,192,0.15) 0%, transparent 70%);
+}
+
+.login-left::after {
+  content: '';
+  position: absolute;
+  bottom: -80px; left: -80px;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(198,40,40,0.1) 0%, transparent 70%);
+}
+
+.login-logo-area {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 60px;
+  z-index: 1;
+}
+
+.login-emblem {
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, #C62828, #B71C1C);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: white;
+  box-shadow: 0 4px 16px rgba(198,40,40,0.4);
+}
+
+.login-logo-text { display: flex; flex-direction: column; }
+.login-logo-main { font-size: 18px; font-weight: 700; color: white; letter-spacing: -0.01em; }
+.login-logo-sub { font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+
+.login-headline {
+  z-index: 1;
+}
+
+.login-headline h1 {
+  font-size: 36px;
+  font-weight: 700;
+  color: white;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+}
+
+.login-headline h1 span {
+  background: linear-gradient(135deg, #42A5F5, #1565C0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.login-headline p {
+  font-size: 15px;
+  color: rgba(255,255,255,0.5);
+  max-width: 400px;
+  line-height: 1.7;
+}
+
+.login-features {
+  margin-top: 48px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.login-feature-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.login-feature-text { font-size: 13px; color: rgba(255,255,255,0.55); }
+
+.login-right {
+  width: 480px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 48px;
+}
+
+.login-form-box {
+  width: 100%;
+  max-width: 380px;
+}
+
+.login-form-header {
+  margin-bottom: 32px;
+}
+
+.login-form-header h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin-bottom: 6px;
+}
+
+.login-form-header p {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.form-group { margin-bottom: 20px; }
+
+.form-label-modern {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.input-modern {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-primary);
+  background: white;
+  transition: var(--transition);
+  outline: none;
+}
+
+.input-modern:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(21,101,192,0.12);
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.input-wrapper .input-modern { padding-left: 40px; }
+
+.btn-primary-modern {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, #1565C0, #0D47A1);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(21,101,192,0.35);
+  letter-spacing: 0.01em;
+}
+
+.btn-primary-modern:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1976D2, #1565C0);
+  box-shadow: 0 6px 16px rgba(21,101,192,0.45);
+  transform: translateY(-1px);
+}
+
+.btn-primary-modern:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-divider {
+  text-align: center;
+  margin: 20px 0;
+  position: relative;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.login-divider::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  width: 40%;
+  height: 1px;
+  background: var(--border);
+}
+
+.login-divider::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 50%;
+  width: 40%;
+  height: 1px;
+  background: var(--border);
+}
+
+.btn-link-modern {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  transition: var(--transition);
+}
+
+.btn-link-modern:hover { color: var(--accent-hover); text-decoration: underline; }
+
+.alert-modern {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.alert-danger-modern {
+  background: var(--danger-light);
+  color: var(--danger);
+  border: 1px solid rgba(198,40,40,0.2);
+}
+
+.alert-success-modern {
+  background: var(--success-light);
+  color: var(--success);
+  border: 1px solid rgba(27,94,32,0.2);
+}
+
+/* ===== PAGE HEADER ===== */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+}
+
+.page-header-left {}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.page-header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ===== BUTTONS ===== */
+.btn-primary-sm {
+  padding: 8px 18px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-primary-sm:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.btn-primary-sm:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+.btn-secondary-sm {
+  padding: 8px 18px;
+  background: white;
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-secondary-sm:hover { background: var(--bg); border-color: #B0BEC5; color: var(--text-primary); }
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: white;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 14px;
+}
+
+.btn-icon:hover { background: var(--bg); border-color: #B0BEC5; color: var(--text-primary); }
+.btn-icon.danger:hover { background: var(--danger-light); border-color: var(--danger); color: var(--danger); }
+.btn-icon.success:hover { background: var(--success-light); border-color: #388E3C; color: #388E3C; }
+.btn-icon.warning:hover { background: var(--warning-light); border-color: var(--warning); color: var(--warning); }
+
+/* ===== STAT CARDS ===== */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+
+.stat-card.primary::before { background: linear-gradient(90deg, var(--accent), #42A5F5); }
+.stat-card.danger::before { background: linear-gradient(90deg, var(--danger), #EF5350); }
+.stat-card.warning::before { background: linear-gradient(90deg, var(--warning), #FFA726); }
+.stat-card.success::before { background: linear-gradient(90deg, #2E7D32, #66BB6A); }
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.stat-icon.primary { background: var(--accent-light); color: var(--accent); }
+.stat-icon.danger { background: var(--danger-light); color: var(--danger); }
+.stat-icon.warning { background: var(--warning-light); color: var(--warning); }
+.stat-icon.success { background: var(--success-light); color: #2E7D32; }
+
+.stat-content { flex: 1; min-width: 0; }
+.stat-value { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; margin-bottom: 4px; }
+.stat-value.primary { color: var(--accent); }
+.stat-value.danger { color: var(--danger); }
+.stat-value.warning { color: var(--warning); }
+.stat-value.success { color: #2E7D32; }
+.stat-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+
+/* ===== CONTENT CARD ===== */
+.content-card {
+  background: white;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.card-header-row {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FAFBFC;
+}
+
+.card-header-row h5 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-body-pad { padding: 20px 24px; }
+
+/* ===== FILTERS ===== */
+.filter-bar {
+  padding: 14px 24px;
+  background: #FAFBFC;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.select-modern {
+  padding: 7px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-primary);
+  background: white;
+  cursor: pointer;
+  transition: var(--transition);
+  outline: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23546E7A' d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 10px;
+  padding-right: 30px;
+  min-width: 140px;
+}
+
+.select-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(21,101,192,0.1); }
+
+.filter-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* ===== TABLE ===== */
+.table-modern {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-modern thead tr {
+  background: #F8FAFC;
+  border-bottom: 2px solid var(--border);
+}
+
+.table-modern thead th {
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+}
+
+.table-modern tbody tr {
+  border-bottom: 1px solid #F0F3F7;
+  transition: var(--transition);
+}
+
+.table-modern tbody tr:hover { background: #F5F8FF; }
+.table-modern tbody tr:last-child { border-bottom: none; }
+
+.table-modern tbody td {
+  padding: 12px 16px;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.table-modern tbody td.muted { color: var(--text-muted); font-size: 12px; }
+
+.clickable-row { cursor: pointer; }
+
+.cell-id {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cell-name { font-weight: 500; }
+.cell-amount { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* ===== STATUS BADGES ===== */
+.badge-modern {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.badge-modern::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.badge-success { background: #E8F5E9; color: #2E7D32; }
+.badge-danger { background: #FFEBEE; color: #C62828; }
+.badge-warning { background: #FFF3E0; color: #E65100; }
+.badge-info { background: #E3F2FD; color: #1565C0; }
+.badge-secondary { background: #F5F5F5; color: #546E7A; }
+
+/* ===== MATCH SCORE ===== */
+.match-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.match-score-bar {
+  width: 40px;
+  height: 4px;
+  background: #EEE;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.match-score-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+/* ===== ACTIONS ===== */
+.actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+/* ===== PAGINATION ===== */
+.pagination-row {
+  padding: 14px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FAFBFC;
+}
+
+.pagination-info { font-size: 12px; color: var(--text-muted); }
+
+.pagination-controls { display: flex; gap: 4px; }
+
+.page-btn {
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: white;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  font-family: 'Inter', sans-serif;
+}
+
+.page-btn:hover:not(:disabled) { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+.page-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+.page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,22,40,0.6);
+  backdrop-filter: blur(4px);
+  z-index: 1055;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+.modal-box {
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-box.wide { max-width: 680px; }
+
+.modal-header-modern {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-header-modern h5 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.modal-icon.primary { background: var(--accent-light); color: var(--accent); }
+.modal-icon.danger { background: var(--danger-light); color: var(--danger); }
+.modal-icon.success { background: var(--success-light); color: #2E7D32; }
+
+.btn-modal-close {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: 18px;
+  transition: var(--transition);
+}
+
+.btn-modal-close:hover { background: var(--border); color: var(--text-primary); }
+
+.modal-body-modern {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer-modern {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background: #FAFBFC;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+/* ===== FORM IN MODAL ===== */
+.form-row { margin-bottom: 18px; }
+
+.form-field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 7px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-primary);
+  background: white;
+  transition: var(--transition);
+  outline: none;
+}
+
+.form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(21,101,192,0.1); }
+
+.form-select-modern {
+  width: 100%;
+  padding: 10px 36px 10px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-primary);
+  background: white;
+  transition: var(--transition);
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%23546E7A' d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 10px;
+}
+
+.form-select-modern:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(21,101,192,0.1); }
+
+.form-textarea {
+  width: 100%;
+  padding: 10px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-primary);
+  background: white;
+  transition: var(--transition);
+  outline: none;
+  resize: vertical;
+  min-height: 90px;
+}
+
+.form-textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(21,101,192,0.1); }
+
+/* ===== DETAIL TABLE ===== */
+.detail-table { width: 100%; }
+
+.detail-table tr { border-bottom: 1px solid #F0F3F7; }
+.detail-table tr:last-child { border-bottom: none; }
+
+.detail-table td {
+  padding: 10px 0;
+  font-size: 13.5px;
+  vertical-align: top;
+}
+
+.detail-table td:first-child {
+  width: 180px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-right: 16px;
+  white-space: nowrap;
+}
+
+.detail-section {
+  background: #FAFBFC;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.detail-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ===== IMPORT PAGE ===== */
+.dropzone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
+  padding: 48px 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+  background: #FAFBFC;
+}
+
+.dropzone:hover, .dropzone.active {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.dropzone-icon {
+  font-size: 40px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.dropzone h6 { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+.dropzone p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+
+.code-block {
+  background: #0D2137;
+  color: #90CAF9;
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  white-space: pre;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+
+.import-result {
+  padding: 16px 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.import-result.success {
+  background: var(--success-light);
+  border-color: rgba(27,94,32,0.2);
+  color: var(--success);
+}
+
+/* ===== LOADING ===== */
+.loading-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px;
+  gap: 16px;
+}
+
+.spinner-modern {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #E3F2FD;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 13px; color: var(--text-secondary); }
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  text-align: center;
+  padding: 60px 32px;
+  color: var(--text-muted);
+}
+
+.empty-state .bi { font-size: 40px; margin-bottom: 12px; display: block; }
+.empty-state p { font-size: 14px; }
+
+/* ===== ALERTS ===== */
+.alert-row {
+  padding: 11px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.alert-row.danger { background: var(--danger-light); color: var(--danger); border: 1px solid rgba(198,40,40,0.2); }
+.alert-row.success { background: var(--success-light); color: #1B5E20; border: 1px solid rgba(27,94,32,0.2); }
+.alert-row.info { background: var(--accent-light); color: var(--accent); border: 1px solid rgba(21,101,192,0.2); }
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CFD8DC; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #90A4AE; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .login-left { display: none; }
+  .login-right { width: 100%; }
+  .main-content { margin-left: 0; }
+  .sidebar { display: none; }
+  .content-wrapper { padding: 16px; }
+}
+
+================================================================================
+FILE: front/src/api/axios.js
+================================================================================
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://localhost:7777',
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.clear();
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api;
+
+================================================================================
+FILE: front/src/context/AuthContext.js
+================================================================================
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import api from '../api/axios';
+
+const AuthContext = createContext(null);
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(() => {
+    const username = localStorage.getItem('username');
+    const role = localStorage.getItem('role');
+    const token = localStorage.getItem('accessToken');
+    if (username && role && token) {
+      return { username, role, accessToken: token };
+    }
+    return null;
+  });
+
+  const login = useCallback(async (username, password) => {
+    const response = await api.post('/auth/login', { username, password });
+    const { accessToken, refreshToken } = response.data;
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    localStorage.setItem('username', username);
+    const payload = JSON.parse(atob(accessToken.split('.')[1]));
+    const role = (payload.role || '').replace('ROLE_', '');
+    localStorage.setItem('role', role);
+    const userData = { username, role, accessToken };
+    setUser(userData);
+    return userData;
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.clear();
+    setUser(null);
+  }, []);
+
+  const hasRole = useCallback((role) => {
+    return localStorage.getItem('role') === role;
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout, hasRole, isAuthenticated: !!user }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  return context;
+}
+
+================================================================================
+FILE: front/src/components/Navbar.js
+================================================================================
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+export default function Navbar() {
+  const { user, logout } = useAuth();
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const initials = user?.username?.slice(0, 2).toUpperCase() || '??';
+
+  const roleLabel = {
+    ADMIN: 'Администратор',
+    OPERATOR: 'Оператор',
+    COMPLIANCE_OFFICER: 'Офицер комплаенс',
+  }[user?.role] || user?.role;
+
+  return (
+    <nav className="navbar-top">
+      <div className="navbar-brand-area">
+        <div className="navbar-emblem">
+          <i className="bi bi-shield-fill-check"></i>
+        </div>
+        <div className="navbar-title">
+          <Link to="/dashboard" className="navbar-title-main">
+            АМЛ Скрининг
+          </Link>
+          <span className="navbar-title-sub">Финансовый мониторинг</span>
+        </div>
+      </div>
+
+      <div className="navbar-right">
+        <div className="navbar-datetime">
+          <span>{time.toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+          <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.7)' }}>
+            {time.toLocaleTimeString('ru-RU')}
+          </span>
+        </div>
+
+        <div className="navbar-user-pill">
+          <div className="user-avatar">{initials}</div>
+          <div className="user-info">
+            <span className="user-name">{user?.username}</span>
+            <span className="user-role">{roleLabel}</span>
+          </div>
+        </div>
+
+        <button className="btn-logout" onClick={logout}>
+          <i className="bi bi-box-arrow-right"></i>
+          Выйти
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+================================================================================
+FILE: front/src/components/Sidebar.js
+================================================================================
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+const NavItem = ({ to, icon, label, badge }) => (
+  <NavLink
+    to={to}
+    className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+  >
+    <i className={`bi bi-${icon}`}></i>
+    <span>{label}</span>
+    {badge && <span className="link-badge">{badge}</span>}
+  </NavLink>
+);
+
+export default function Sidebar() {
+  const { hasRole } = useAuth();
+
+  return (
+    <aside className="sidebar">
+      <div className="sidebar-section-label">Навигация</div>
+
+      <NavItem to="/dashboard" icon="speedometer2" label="Дашборд" />
+      <NavItem to="/transactions" icon="arrow-left-right" label="Транзакции" />
+      <NavItem to="/blacklist" icon="shield-exclamation" label="Санкционный список" />
+
+      {(hasRole('ADMIN') || hasRole('OPERATOR')) && (
+        <NavItem to="/clients" icon="people" label="Клиенты" />
+      )}
+
+      <div className="sidebar-divider" />
+
+      <div className="sidebar-section-label">Управление</div>
+
+      {hasRole('ADMIN') && (
+        <NavItem to="/import" icon="cloud-upload" label="Импорт JSON" />
+      )}
+
+      {hasRole('ADMIN') && (
+        <NavItem to="/users" icon="person-gear" label="Пользователи" />
+      )}
+
+      <div className="sidebar-bottom">
+        <div className="sidebar-threshold">
+          <div className="threshold-dot"></div>
+          <span className="threshold-text">Порог скрининга</span>
+          <span className="threshold-value">80%</span>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+================================================================================
+FILE: front/src/components/PrivateRoute.js
+================================================================================
+import React from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+export default function PrivateRoute({ children, roles }) {
+  const { isAuthenticated, hasRole } = useAuth();
+
+  if (!isAuthenticated) return <Navigate to="/login" />;
+
+  if (roles && roles.length > 0) {
+    const allowed = roles.some((r) => hasRole(r));
+    if (!allowed) {
+      return (
+        <div style={{ padding: 40 }}>
+          <div className="alert-row danger">
+            <i className="bi bi-exclamation-triangle-fill"></i>
+            Доступ запрещён. У вас нет прав для просмотра этой страницы.
+          </div>
+        </div>
+      );
+    }
+  }
+
+  return children;
+}
+
+================================================================================
+FILE: front/src/components/StatusBadge.js
+================================================================================
+import React from 'react';
+
+const config = {
+  CLEAR:        { cls: 'badge-success',   label: 'Чисто' },
+  APPROVED:     { cls: 'badge-success',   label: 'Одобрено' },
+  ACTIVE:       { cls: 'badge-success',   label: 'Активен' },
+  BLOCKED_AUTO: { cls: 'badge-danger',    label: 'Заблокирован' },
+  REJECTED:     { cls: 'badge-danger',    label: 'Отклонено' },
+  HIT:          { cls: 'badge-danger',    label: 'Совпадение' },
+  INACTIVE:     { cls: 'badge-secondary', label: 'Неактивен' },
+  PENDING:      { cls: 'badge-secondary', label: 'Ожидание' },
+  UNDER_REVIEW: { cls: 'badge-warning',   label: 'На проверке' },
+  CHECKING:     { cls: 'badge-info',      label: 'Проверка...' },
+};
+
+export default function StatusBadge({ status }) {
+  const { cls, label } = config[status] || { cls: 'badge-secondary', label: status };
+  return <span className={`badge-modern ${cls}`}>{label}</span>;
+}
+
+================================================================================
+FILE: front/src/components/Pagination.js
+================================================================================
+import React from 'react';
+
+export default function Pagination({ pageData, onPageChange }) {
+  if (!pageData || pageData.totalPages <= 1) return null;
+
+  const { number: current, totalPages, totalElements, size } = pageData;
+  const from = current * size + 1;
+  const to = Math.min((current + 1) * size, totalElements);
+
+  const pages = [];
+  for (let i = 0; i < totalPages; i++) {
+    if (i === 0 || i === totalPages - 1 || (i >= current - 2 && i <= current + 2)) {
+      pages.push(i);
+    } else if (pages[pages.length - 1] !== -1) {
+      pages.push(-1);
+    }
+  }
+
+  return (
+    <div className="pagination-row">
+      <span className="pagination-info">
+        Показано {from}–{to} из {totalElements}
+      </span>
+      <div className="pagination-controls">
+        <button className="page-btn" onClick={() => onPageChange(current - 1)} disabled={current === 0}>
+          <i className="bi bi-chevron-left"></i>
+        </button>
+        {pages.map((p, i) =>
+          p === -1 ? (
+            <button key={`e-${i}`} className="page-btn" disabled>…</button>
+          ) : (
+            <button
+              key={p}
+              className={`page-btn ${p === current ? 'active' : ''}`}
+              onClick={() => onPageChange(p)}
+            >
+              {p + 1}
+            </button>
+          )
+        )}
+        <button className="page-btn" onClick={() => onPageChange(current + 1)} disabled={current >= totalPages - 1}>
+          <i className="bi bi-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+FILE: front/src/components/ConfirmModal.js
+================================================================================
+import React from 'react';
+
+export default function ConfirmModal({ show, title, message, onConfirm, onCancel, danger = true }) {
+  if (!show) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal-box" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header-modern">
+          <h5>
+            <div className={`modal-icon ${danger ? 'danger' : 'primary'}`}>
+              <i className={`bi bi-${danger ? 'exclamation-triangle' : 'question-circle'}`}></i>
+            </div>
+            {title || 'Подтверждение'}
+          </h5>
+          <button className="btn-modal-close" onClick={onCancel}>
+            <i className="bi bi-x"></i>
+          </button>
+        </div>
+        <div className="modal-body-modern">
+          <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>{message}</p>
+        </div>
+        <div className="modal-footer-modern">
+          <button className="btn-secondary-sm" onClick={onCancel}>Отмена</button>
+          <button
+            className="btn-primary-sm"
+            style={{ background: danger ? 'var(--danger)' : 'var(--accent)' }}
+            onClick={onConfirm}
+          >
+            Подтвердить
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+FILE: front/src/pages/LoginPage.js
+================================================================================
+import React, { useState } from 'react';
+import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+
+export default function LoginPage() {
+  const { login } = useAuth();
+  const [mode, setMode] = useState('login');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState('OPERATOR');
+  const [showPass, setShowPass] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+    if (!username || !password) { setError('Введите логин и пароль'); return; }
+    setLoading(true);
+    try {
+      await login(username, password);
+    } catch (err) {
+      const msg = err.response?.data?.message?.[0] || err.response?.data?.message || 'Неверный логин или пароль';
+      setError(typeof msg === 'string' ? msg : 'Ошибка входа');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError(''); setSuccess('');
+    if (!username || !password || password.length < 8) {
+      setError('Имя и пароль (мин. 8 символов) обязательны'); return;
+    }
+    setLoading(true);
+    try {
+      await api.post('/auth/register', { name: username, password, email, role });
+      setSuccess(`Пользователь "${username}" создан. Войдите в систему.`);
+      setUsername(''); setPassword(''); setEmail('');
+      setMode('login');
+    } catch (err) {
+      const msg = err.response?.data?.message?.[0] || 'Ошибка регистрации';
+      setError(typeof msg === 'string' ? msg : 'Ошибка');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="login-page">
+      {/* LEFT PANEL */}
+      <div className="login-left">
+        <div className="login-logo-area">
+          <div className="login-emblem">
+            <i className="bi bi-shield-fill-check"></i>
+          </div>
+          <div className="login-logo-text">
+            <span className="login-logo-main">АМЛ Скрининг</span>
+            <span className="login-logo-sub">Система финансового мониторинга</span>
+          </div>
+        </div>
+
+        <div className="login-headline">
+          <h1>
+            Защита от<br />
+            <span>финансовых рисков</span>
+          </h1>
+          <p>
+            Автоматизированная система проверки транзакций и клиентов по перечням
+            Федеральной службы по финансовому мониторингу.
+          </p>
+        </div>
+
+        <div className="login-features">
+          <div className="login-feature-item">
+            <div className="login-feature-icon">
+              <i className="bi bi-lightning-charge" style={{ color: '#42A5F5' }}></i>
+            </div>
+            <span className="login-feature-text">Мгновенная автоматическая проверка транзакций</span>
+          </div>
+          <div className="login-feature-item">
+            <div className="login-feature-icon">
+              <i className="bi bi-database-check" style={{ color: '#66BB6A' }}></i>
+            </div>
+            <span className="login-feature-text">Нечёткое сопоставление по перечням Росфинмониторинга</span>
+          </div>
+          <div className="login-feature-item">
+            <div className="login-feature-icon">
+              <i className="bi bi-person-lock" style={{ color: '#FFA726' }}></i>
+            </div>
+            <span className="login-feature-text">Разграничение доступа по ролям</span>
+          </div>
+          <div className="login-feature-item">
+            <div className="login-feature-icon">
+              <i className="bi bi-graph-up-arrow" style={{ color: '#AB47BC' }}></i>
+            </div>
+            <span className="login-feature-text">Полный аудит проверок и решений</span>
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT PANEL */}
+      <div className="login-right">
+        <div className="login-form-box">
+          <div className="login-form-header">
+            <h2>{mode === 'login' ? 'Вход в систему' : 'Регистрация'}</h2>
+            <p>{mode === 'login' ? 'Введите учётные данные для доступа' : 'Создание нового пользователя'}</p>
+          </div>
+
+          {error && (
+            <div className="alert-modern alert-danger-modern">
+              <i className="bi bi-exclamation-circle-fill"></i>
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="alert-modern alert-success-modern">
+              <i className="bi bi-check-circle-fill"></i>
+              {success}
+            </div>
+          )}
+
+          {mode === 'login' ? (
+            <form onSubmit={handleLogin}>
+              <div className="form-group">
+                <label className="form-label-modern">Логин</label>
+                <div className="input-wrapper">
+                  <i className="bi bi-person input-icon"></i>
+                  <input
+                    type="text"
+                    className="input-modern"
+                    placeholder="Введите логин"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label-modern">Пароль</label>
+                <div className="input-wrapper" style={{ position: 'relative' }}>
+                  <i className="bi bi-lock input-icon"></i>
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    className="input-modern"
+                    placeholder="Введите пароль"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={{ paddingRight: 40 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    style={{
+                      position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)',
+                      fontSize: 16, padding: 0, display: 'flex',
+                    }}
+                  >
+                    <i className={`bi bi-eye${showPass ? '-slash' : ''}`}></i>
+                  </button>
+                </div>
+              </div>
+
+              <button type="submit" className="btn-primary-modern" disabled={loading}>
+                {loading
+                  ? <><div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div> Вход...</>
+                  : <><i className="bi bi-box-arrow-in-right"></i> Войти</>
+                }
+              </button>
+
+              <div className="login-divider" style={{ marginTop: 24 }}>или</div>
+
+              <div style={{ textAlign: 'center', marginTop: 16 }}>
+                <button type="button" className="btn-link-modern" onClick={() => { setError(''); setSuccess(''); setMode('register'); }}>
+                  Зарегистрировать пользователя
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleRegister}>
+              <div className="form-group">
+                <label className="form-label-modern">Имя пользователя *</label>
+                <div className="input-wrapper">
+                  <i className="bi bi-person input-icon"></i>
+                  <input
+                    type="text" className="input-modern" placeholder="Минимум 3 символа"
+                    value={username} onChange={(e) => setUsername(e.target.value)} autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label-modern">Пароль *</label>
+                <div className="input-wrapper">
+                  <i className="bi bi-lock input-icon"></i>
+                  <input
+                    type="password" className="input-modern" placeholder="Минимум 8 символов"
+                    value={password} onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label-modern">Email</label>
+                <div className="input-wrapper">
+                  <i className="bi bi-envelope input-icon"></i>
+                  <input
+                    type="email" className="input-modern" placeholder="example@mail.ru"
+                    value={email} onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label-modern">Роль</label>
+                <select className="input-modern" style={{ appearance: 'auto' }} value={role} onChange={(e) => setRole(e.target.value)}>
+                  <option value="ADMIN">Администратор (ADMIN)</option>
+                  <option value="OPERATOR">Оператор (OPERATOR)</option>
+                  <option value="COMPLIANCE_OFFICER">Офицер комплаенс (COMPLIANCE_OFFICER)</option>
+                </select>
+              </div>
+
+              <button type="submit" className="btn-primary-modern" disabled={loading}>
+                {loading
+                  ? <><div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div> Создание...</>
+                  : <><i className="bi bi-person-plus"></i> Зарегистрировать</>
+                }
+              </button>
+
+              <div style={{ textAlign: 'center', marginTop: 20 }}>
+                <button type="button" className="btn-link-modern" onClick={() => { setError(''); setSuccess(''); setMode('login'); }}>
+                  ← Вернуться к входу
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+FILE: front/src/pages/DashboardPage.js
+================================================================================
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../api/axios';
+import StatusBadge from '../components/StatusBadge';
+
+export default function DashboardPage() {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({ total: 0, blocked: 0, underReview: 0, blacklist: 0 });
+  const [recentTx, setRecentTx] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [txRes, blRes] = await Promise.all([
+          api.get('/transactions?page=0&size=10'),
+          api.get('/blacklist?status=ACTIVE&page=0&size=1'),
+        ]);
+        const content = txRes.data.content || [];
+        setStats({
+          total: txRes.data.totalElements || 0,
+          blocked: content.filter((t) => t.status === 'BLOCKED_AUTO').length,
+          underReview: content.filter((t) => t.status === 'UNDER_REVIEW').length,
+          blacklist: blRes.data.totalElements || 0,
+        });
+        setRecentTx(content);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="loading-center">
+        <div className="spinner-modern"></div>
+        <span className="loading-text">Загрузка данных...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title">Дашборд</h1>
+          <p className="page-subtitle">Обзор системы финансового мониторинга</p>
+        </div>
+      </div>
+
+      <div className="stat-grid">
+        <div className="stat-card primary">
+          <div className="stat-icon primary"><i className="bi bi-arrow-left-right"></i></div>
+          <div className="stat-content">
+            <div className="stat-value primary">{stats.total}</div>
+            <div className="stat-label">Всего транзакций</div>
+          </div>
+        </div>
+        <div className="stat-card danger">
+          <div className="stat-icon danger"><i className="bi bi-shield-x"></i></div>
+          <div className="stat-content">
+            <div className="stat-value danger">{stats.blocked}</div>
+            <div className="stat-label">Заблокировано</div>
+          </div>
+        </div>
+        <div className="stat-card warning">
+          <div className="stat-icon warning"><i className="bi bi-hourglass-split"></i></div>
+          <div className="stat-content">
+            <div className="stat-value warning">{stats.underReview}</div>
+            <div className="stat-label">На рассмотрении</div>
+          </div>
+        </div>
+        <div className="stat-card success">
+          <div className="stat-icon success"><i className="bi bi-exclamation-circle"></i></div>
+          <div className="stat-content">
+            <div className="stat-value success">{stats.blacklist}</div>
+            <div className="stat-label">В санкционном списке</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="content-card">
+        <div className="card-header-row">
+          <h5><i className="bi bi-clock-history" style={{ color: 'var(--accent)' }}></i> Последние транзакции</h5>
+          <button className="btn-secondary-sm" onClick={() => navigate('/transactions')}>
+            Все транзакции <i className="bi bi-arrow-right"></i>
+          </button>
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="table-modern">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Клиент</th>
+                <th>Получатель</th>
+                <th>Сумма</th>
+                <th>Валюта</th>
+                <th>Статус</th>
+                <th>Дата</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentTx.map((tx) => (
+                <tr key={tx.id} className="clickable-row" onClick={() => navigate('/transactions')}>
+                  <td className="cell-id">#{tx.id}</td>
+                  <td className="cell-name">{tx.clientName}</td>
+                  <td>{tx.recipientName}</td>
+                  <td className="cell-amount">{tx.amount?.toLocaleString('ru-RU')}</td>
+                  <td><span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>{tx.currency}</span></td>
+                  <td><StatusBadge status={tx.status} /></td>
+                  <td className="muted">{tx.createdAt ? new Date(tx.createdAt).toLocaleDateString('ru-RU') : '-'}</td>
+                </tr>
+              ))}
+              {recentTx.length === 0 && (
+                <tr>
+                  <td colSpan="7">
+                    <div className="empty-state">
+                      <i className="bi bi-inbox"></i>
+                      <p>Транзакции отсутствуют</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+FILE: front/src/pages/BlacklistPage.js
+================================================================================
+import React, { useState, useEffect } from 'react';
+import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+import StatusBadge from '../components/StatusBadge';
+import Pagination from '../components/Pagination';
+import ConfirmModal from '../components/ConfirmModal';
+
+const listTypes = ['TERRORIST', 'EXTREMIST', 'SANCTIONS_RU', 'SANCTIONS_EU', 'ROSFINMONITORING'];
+
+const listTypeLabel = {
+  TERRORIST: 'Терроризм',
+  EXTREMIST: 'Экстремизм',
+  SANCTIONS_RU: 'Санкции РФ',
+  SANCTIONS_EU: 'Санкции ЕС',
+  ROSFINMONITORING: 'Росфинмониторинг',
+};
+
+export default function BlacklistPage() {
+  const { hasRole } = useAuth();
+  const [entries, setEntries] = useState([]);
+  const [pageData, setPageData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [statusFilter, setStatusFilter] = useState('ACTIVE');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [detailEntry, setDetailEntry] = useState(null);
+  const [form, setForm] = useState({ fullName: '', birthDate: '', passportNumber: '', inn: '', listType: 'TERRORIST' });
+  const [message, setMessage] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+
+  const fetchEntries = async () => {
+    setLoading(true);
+    try {
+      const params = { page, size: 10 };
+      if (statusFilter) params.status = statusFilter;
+      if (typeFilter) params.listType = typeFilter;
+      const res = await api.get('/blacklist', { params });
+      setEntries(res.data.content || []);
+      setPageData(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchEntries(); }, [page, statusFilter, typeFilter]);
+
+  const resetForm = () => {
+    setForm({ fullName: '', birthDate: '', passportNumber: '', inn: '', listType: 'TERRORIST' });
+    setMessage(null);
+  };
+
+  const openAdd = () => { setEditingEntry(null); resetForm(); setShowModal(true); };
+
+  const openEdit = (e) => {
+    setEditingEntry(e);
+    setForm({ fullName: e.fullName || '', birthDate: e.birthDate || '', passportNumber: e.passportNumber || '', inn: e.inn || '', listType: e.listType || 'TERRORIST' });
+    setMessage(null);
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.fullName.trim()) { setMessage({ type: 'danger', text: 'ФИО обязательно' }); return; }
+    setSaving(true);
+    try {
+      if (editingEntry) {
+        await api.patch(`/blacklist/${editingEntry.id}`, form);
+      } else {
+        await api.post('/blacklist', form);
+      }
+      setShowModal(false);
+      resetForm();
+      fetchEntries();
+    } catch (err) {
+      setMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка сохранения' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (!confirmDelete) return;
+    try {
+      await api.delete(`/blacklist/${confirmDelete.id}`);
+      setConfirmDelete(null);
+      fetchEntries();
+    } catch (err) {
+      setConfirmDelete(null);
+    }
+  };
+
+  return (
+    <div>
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title">Санкционный список</h1>
+          <p className="page-subtitle">Перечни Росфинмониторинга и международных санкций</p>
+        </div>
+        <div className="page-header-actions">
+          <button className="btn-secondary-sm" onClick={fetchEntries}>
+            <i className="bi bi-arrow-clockwise"></i> Обновить
+          </button>
+          {hasRole('ADMIN') && (
+            <button className="btn-primary-sm" onClick={openAdd}>
+              <i className="bi bi-plus-lg"></i> Добавить запись
+            </button>
+          )}
+        </div>
+      </div>
+
+      {message && (
+        <div className={`alert-row ${message.type}`}>
+          <i className={`bi bi-${message.type === 'danger' ? 'exclamation-circle' : 'check-circle'}`}></i>
+          {message.text}
+        </div>
+      )}
+
+      <div className="content-card">
+        <div className="filter-bar">
+          <span className="filter-label">Фильтр:</span>
+          <select className="select-modern" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}>
+            <option value="">Все статусы</option>
+            <option value="ACTIVE">Активные</option>
+            <option value="INACTIVE">Неактивные</option>
+          </select>
+          <select className="select-modern" value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(0); }}>
+            <option value="">Все типы</option>
+            {listTypes.map((lt) => <option key={lt} value={lt}>{listTypeLabel[lt]}</option>)}
+          </select>
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          {loading ? (
+            <div className="loading-center" style={{ padding: 48 }}>
+              <div className="spinner-modern"></div>
+            </div>
+          ) : (
+            <table className="table-modern">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>ФИО / Наименование</th>
+                  <th>Паспорт</th>
+                  <th>ИНН</th>
+                  <th>Тип списка</th>
+                  <th>Статус</th>
+                  <th>Добавил</th>
+                  <th>Дата добавления</th>
+                  <th>Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((e) => (
+                  <tr key={e.id} className="clickable-row" onClick={() => setDetailEntry(e)}>
+                    <td className="cell-id">#{e.id}</td>
+                    <td className="cell-name">{e.fullName}</td>
+                    <td>{e.passportNumber || <span className="muted">—</span>}</td>
+                    <td>{e.inn || <span className="muted">—</span>}</td>
+                    <td>
+                      <span style={{ fontSize: 12, fontWeight: 600, padding: '2px 8px', background: '#EEF2FF', color: '#3730A3', borderRadius: 4 }}>
+                        {listTypeLabel[e.listType] || e.listType}
+                      </span>
+                    </td>
+                    <td><StatusBadge status={e.status} /></td>
+                    <td className="muted">{e.addedBy || '—'}</td>
+                    <td className="muted">{e.addedAt ? new Date(e.addedAt).toLocaleDateString('ru-RU') : '—'}</td>
+                    <td onClick={(ev) => ev.stopPropagation()}>
+                      <div className="actions-cell">
+                        {(hasRole('ADMIN') || hasRole('COMPLIANCE_OFFICER')) && (
+                          <button className="btn-icon" title="Редактировать" onClick={() => openEdit(e)}>
+                            <i className="bi bi-pencil"></i>
+                          </button>
+                        )}
+                        {hasRole('ADMIN') && e.status === 'ACTIVE' && (
+                          <button className="btn-icon danger" title="Деактивировать" onClick={() => setConfirmDelete(e)}>
+                            <i className="bi bi-archive"></i>
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {entries.length === 0 && (
+                  <tr><td colSpan="9">
+                    <div className="empty-state">
+                      <i className="bi bi-shield-slash"></i>
+                      <p>Записи не найдены</p>
+                    </div>
+                  </td></tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+        <Pagination pageData={pageData} onPageChange={setPage} />
+      </div>
+
+      {/* Add/Edit Modal */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-modern">
+              <h5>
+                <div className="modal-icon primary">
+                  <i className={`bi bi-${editingEntry ? 'pencil' : 'plus-lg'}`}></i>
+                </div>
+                {editingEntry ? 'Редактировать запись' : 'Добавить запись'}
+              </h5>
+              <button className="btn-modal-close" onClick={() => setShowModal(false)}><i className="bi bi-x"></i></button>
+            </div>
+            <div className="modal-body-modern">
+              {message && (
+                <div className="alert-row danger" style={{ marginBottom: 16 }}>
+                  <i className="bi bi-exclamation-circle"></i>{message.text}
+                </div>
+              )}
+              <div className="form-row">
+                <label className="form-field-label">ФИО / Наименование *</label>
+                <input className="form-input" placeholder="Иванов Иван Иванович" value={form.fullName}
+                  onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
+              </div>
+              <div className="form-row">
+                <label className="form-field-label">Дата рождения</label>
+                <input type="date" className="form-input" value={form.birthDate}
+                  onChange={(e) => setForm({ ...form, birthDate: e.target.value })} />
+              </div>
+              <div className="form-row">
+                <label className="form-field-label">Номер паспорта</label>
+                <input className="form-input" placeholder="0000 000000" value={form.passportNumber}
+                  onChange={(e) => setForm({ ...form, passportNumber: e.target.value })} />
+              </div>
+              <div className="form-row">
+                <label className="form-field-label">ИНН</label>
+                <input className="form-input" placeholder="123456789012" maxLength={12} value={form.inn}
+                  onChange={(e) => setForm({ ...form, inn: e.target.value })} />
+              </div>
+              <div className="form-row">
+                <label className="form-field-label">Тип списка *</label>
+                <select className="form-select-modern" value={form.listType}
+                  onChange={(e) => setForm({ ...form, listType: e.target.value })}>
+                  {listTypes.map((lt) => <option key={lt} value={lt}>{listTypeLabel[lt]}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="modal-footer-modern">
+              <button className="btn-secondary-sm" onClick={() => setShowModal(false)}>Отмена</button>
+              <button className="btn-primary-sm" onClick={handleSave} disabled={saving}>
+                {saving ? <><div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div> Сохранение...</> : <><i className="bi bi-check-lg"></i> Сохранить</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {detailEntry && (
+        <div className="modal-overlay" onClick={() => setDetailEntry(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-modern">
+              <h5>
+                <div className="modal-icon primary"><i className="bi bi-person-vcard"></i></div>
+                Запись #{detailEntry.id}
+              </h5>
+              <button className="btn-modal-close" onClick={() => setDetailEntry(null)}><i className="bi bi-x"></i></button>
+            </div>
+            <div className="modal-body-modern">
+              <table className="detail-table">
+                <tbody>
+                  <tr><td>ФИО</td><td><strong>{detailEntry.fullName}</strong></td></tr>
+                  <tr><td>Дата рождения</td><td>{detailEntry.birthDate || '—'}</td></tr>
+                  <tr><td>Паспорт</td><td>{detailEntry.passportNumber || '—'}</td></tr>
+                  <tr><td>ИНН</td><td>{detailEntry.inn || '—'}</td></tr>
+                  <tr><td>Тип списка</td><td>{listTypeLabel[detailEntry.listType] || detailEntry.listType}</td></tr>
+                  <tr><td>Статус</td><td><StatusBadge status={detailEntry.status} /></td></tr>
+                  <tr><td>Добавил</td><td>{detailEntry.addedBy || '—'}</td></tr>
+                  <tr><td>Дата добавления</td><td>{detailEntry.addedAt ? new Date(detailEntry.addedAt).toLocaleString('ru-RU') : '—'}</td></tr>
+                  <tr><td>Обновлён</td><td>{detailEntry.updatedAt ? new Date(detailEntry.updatedAt).toLocaleString('ru-RU') : '—'}</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="modal-footer-modern">
+              <button className="btn-secondary-sm" onClick={() => setDetailEntry(null)}>Закрыть</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ConfirmModal
+        show={!!confirmDelete}
+        title="Деактивировать запись"
+        message={`Запись "${confirmDelete?.fullName}" будет деактивирована. Она останется в базе со статусом INACTIVE.`}
+        onConfirm={handleDeactivate}
+        onCancel={() => setConfirmDelete(null)}
+      />
+    </div>
+  );
+}
+
+================================================================================
+FILE: front/src/pages/ClientsPage.js
+================================================================================
+import React, { useState, useEffect } from 'react';
+import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+
+export default function ClientsPage() {
+  const { hasRole } = useAuth();
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [detailClient, setDetailClient] = useState(null);
+  const [form, setForm] = useState({ fullName: '', birthDate: '', passportNumber: '', inn: '', phone: '', email: '' });
+  const [message, setMessage] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const fetchClients = async () => {
+    try {
+      const res = await api.get('/clients');
+      setClients(res.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchClients(); }, []);
+
+  const resetForm = () => {
+    setForm({ fullName: '', birthDate: '', passportNumber: '', inn: '', phone: '', email: '' });
+    setMessage(null);
+  };
+
+  const handleSave = async () => {
+    if (!form.fullName) { setMessage({ type: 'danger', text: 'ФИО обязательно' }); return; }
+    setSaving(true);
+    try {
+      await api.post('/clients', form);
+      setShowModal(false);
+      resetForm();
+      fetchClients();
+    } catch (err) {
+      setMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const statusColor = { ACTIVE: '#2E7D32', BLOCKED: '#C62828', PENDING_REVIEW: '#E65100' };
+
+  if (loading) {
+    return (
+      <div className="loading-center">
+        <div className="spinner-modern"></div>
+        <span className="loading-text">Загрузка клиентов...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title">Клиенты</h1>
+          <p className="page-subtitle">База данных клиентов организации</p>
+        </div>
+        <div className="page-header-actions">
+          {(hasRole('ADMIN') || hasRole('OPERATOR')) && (
+            <button className="btn-primary-sm" onClick={() => { resetForm(); setShowModal(true); }}>
+              <i className="bi bi-person-plus"></i> Добавить клиента
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="content-card">
+        <div style={{ overflowX: 'auto' }}>
+          <table className="table-modern">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>ФИО</th>
+                <th>Паспорт</th>
+                <th>Телефон</th>
+                <th>Email</th>
+                <th>Статус</th>
+                <th>Дата регистрации</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clients.map((c) => (
+                <tr key={c.id}>
+                  <td className="cell-id">#{c.id}</td>
+                  <td className="cell-name">{c.fullName}</td>
+                  <td>{c.passportNumber || <span className="muted">—</span>}</td>
+                  <td>{c.phone || <span className="muted">—</span>}</td>
+                  <td>{c.email || <span className="muted">—</span>}</td>
+                  <td>
+                    <span style={{
+                      fontSize: 12, fontWeight: 600, padding: '3px 10px', borderRadius: 20,
+                      background: c.status === 'ACTIVE' ? '#E8F5E9' : '#FFEBEE',
+                      color: statusColor[c.status] || '#546E7A',
+                    }}>
+                      {c.status}
+                    </span>
+                  </td>
+                  <td className="muted">{c.createdAt ? new Date(c.createdAt).toLocaleDateString('ru-RU') : '—'}</td>
+                  <td>
+                    <button className="btn-icon" title="Просмотр" onClick={() => setDetailClient(c)}>
+                      <i className="bi bi-eye"></i>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {clients.length === 0 && (
+                <tr><td colSpan="8">
+                  <div className="empty-state">
+                    <i className="bi bi-people"></i>
+                    <p>Клиенты не найдены</p>
+                  </div>
+                </td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Add Modal */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-modern">
+              <h5>
+                <div className="modal-icon primary"><i className="bi bi-person-plus"></i></div>
+                Добавить клиента
+              </h5>
+              <button className="btn-modal-close" onClick={() => setShowModal(false)}><i className="bi bi-x"></i></button>
+            </div>
+            <div className="modal-body-modern">
+              {message && <div className="alert-row danger" style={{ marginBottom: 16 }}><i className="bi bi-exclamation-circle"></i>{message.text}</div>}
+              {[
+                { label: 'ФИО *', field: 'fullName', type: 'text', placeholder: 'Иванов Иван Иванович' },
+                { label: 'Дата рождения', field: 'birthDate', type: 'date', placeholder: '' },
+                { label: 'Номер паспорта', field: 'passportNumber', type: 'text', placeholder: '0000 000000' },
+                { label: 'ИНН', field: 'inn', type: 'text', placeholder: '123456789012' },
+                { label: 'Телефон', field: 'phone', type: 'text', placeholder: '+7 000 000-00-00' },
+                { label: 'Email', field: 'email', type: 'email', placeholder: 'example@mail.ru' },
+              ].map(({ label, field, type, placeholder }) => (
+                <div key={field} className="form-row">
+                  <label className="form-field-label">{label}</label>
+                  <input type={type} className="form-input" placeholder={placeholder} value={form[field]}
+                    onChange={(e) => setForm({ ...form, [field]: e.target.value })} />
+                </div>
+              ))}
+            </div>
+            <div className="modal-footer-modern">
+              <button className="btn-secondary-sm" onClick={() => setShowModal(false)}>Отмена</button>
+              <button className="btn-primary-sm" onClick={handleSave} disabled={saving}>
+                {saving ? 'Сохранение...' : <><i className="bi bi-check-lg"></i> Сохранить</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {detailClient && (
+        <div className="modal-overlay" onClick={() => setDetailClient(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-modern">
+              <h5>
+                <div className="modal-icon primary"><i className="bi bi-person-badge"></i></div>
+                {detailClient.fullName}
+              </h5>
+              <button className="btn-modal-close" onClick={() => setDetailClient(null)}><i className="bi bi-x"></i></button>
+            </div>
+            <div className="modal-body-modern">
+              <table className="detail-table">
+                <tbody>
+                  {[
+                    ['ID', `#${detailClient.id}`],
+                    ['ФИО', detailClient.fullName],
+                    ['Дата рождения', detailClient.birthDate || '—'],
+                    ['Паспорт', detailClient.passportNumber || '—'],
+                    ['ИНН', detailClient.inn || '—'],
+                    ['Телефон', detailClient.phone || '—'],
+                    ['Email', detailClient.email || '—'],
+                    ['Статус', detailClient.status],
+                    ['Создан', detailClient.createdAt ? new Date(detailClient.createdAt).toLocaleString('ru-RU') : '—'],
+                  ].map(([k, v]) => (
+                    <tr key={k}><td>{k}</td><td>{v}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="modal-footer-modern">
+              <button className="btn-secondary-sm" onClick={() => setDetailClient(null)}>Закрыть</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+================================================================================
+FILE: front/src/pages/TransactionsPage.js
+================================================================================
+import React, { useState, useEffect, useCallback } from 'react';
+import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+import StatusBadge from '../components/StatusBadge';
+import Pagination from '../components/Pagination';
+
+const statuses = ['PENDING', 'CHECKING', 'CLEAR', 'BLOCKED_AUTO', 'UNDER_REVIEW', 'APPROVED', 'REJECTED'];
+const currencies = ['RUB', 'USD', 'EUR'];
+
+function MatchScore({ tx }) {
+  if (!tx.checkResult) return <span className="muted">—</span>;
+  const score = tx.checkResult.matchScore;
+  if (score == null) return <span className="muted">—</span>;
+  const pct = (score * 100).toFixed(1);
+  const isHit = tx.checkResult.result === 'HIT';
+  const fillColor = isHit ? 'var(--danger)' : '#4CAF50';
+  return (
+    <div className="match-score">
+      <div className="match-score-bar">
+        <div className="match-score-fill" style={{ width: `${Math.min(score * 100, 100)}%`, background: fillColor }}></div>
+      </div>
+      <span style={{ color: fillColor, fontWeight: 700 }}>{pct}%</span>
+    </div>
+  );
+}
+
+export default function TransactionsPage() {
+  const { hasRole } = useAuth();
+  const [transactions, setTransactions] = useState([]);
+  const [pageData, setPageData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [globalMessage, setGlobalMessage] = useState(null);
+
+  const [showCreate, setShowCreate] = useState(false);
+  const [clients, setClients] = useState([]);
+  const [createForm, setCreateForm] = useState({ clientId: '', recipientName: '', recipientPassport: '', amount: '', currency: 'RUB' });
+  const [creating, setCreating] = useState(false);
+  const [createMsg, setCreateMsg] = useState(null);
+
+  const [detailTx, setDetailTx] = useState(null);
+
+  const [approveTx, setApproveTx] = useState(null);
+  const [approveComment, setApproveComment] = useState('');
+  const [approving, setApproving] = useState(false);
+
+  const [rejectTx, setRejectTx] = useState(null);
+  const [rejectComment, setRejectComment] = useState('');
+  const [rejecting, setRejecting] = useState(false);
+
+  const fetchTransactions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = { page, size: 10 };
+      if (statusFilter) params.status = statusFilter;
+      const res = await api.get('/transactions', { params });
+      setTransactions(res.data.content || []);
+      setPageData(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, statusFilter]);
+
+  useEffect(() => { fetchTransactions(); }, [fetchTransactions]);
+
+  useEffect(() => {
+    const hasChecking = transactions.some((t) => t.status === 'CHECKING');
+    if (!hasChecking) return;
+    const timer = setTimeout(fetchTransactions, 30000);
+    return () => clearTimeout(timer);
+  }, [transactions, fetchTransactions]);
+
+  const openCreate = async () => {
+    setCreateMsg(null);
+    setCreateForm({ clientId: '', recipientName: '', recipientPassport: '', amount: '', currency: 'RUB' });
+    try {
+      const res = await api.get('/clients');
+      setClients(res.data || []);
+    } catch (e) {}
+    setShowCreate(true);
+  };
+
+  const handleCreate = async () => {
+    if (!createForm.clientId || !createForm.recipientName.trim() || !createForm.amount) {
+      setCreateMsg({ type: 'danger', text: 'Клиент, получатель и сумма обязательны' }); return;
+    }
+    if (parseFloat(createForm.amount) <= 0) {
+      setCreateMsg({ type: 'danger', text: 'Сумма должна быть положительной' }); return;
+    }
+    setCreating(true);
+    try {
+      await api.post('/transactions', {
+        clientId: parseInt(createForm.clientId),
+        recipientName: createForm.recipientName,
+        recipientPassport: createForm.recipientPassport,
+        amount: parseFloat(createForm.amount),
+        currency: createForm.currency,
+      });
+      setShowCreate(false);
+      fetchTransactions();
+    } catch (err) {
+      setCreateMsg({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка создания' });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleSubmitReview = async (id) => {
+    try {
+      await api.post(`/transactions/${id}/submit-review`);
+      fetchTransactions();
+    } catch (err) {
+      setGlobalMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка' });
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!approveComment.trim()) return;
+    setApproving(true);
+    try {
+      await api.post(`/transactions/${approveTx.id}/approve`, { comment: approveComment });
+      setApproveTx(null); setApproveComment('');
+      fetchTransactions();
+    } catch (err) {
+      setGlobalMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка' });
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectComment.trim()) return;
+    setRejecting(true);
+    try {
+      await api.post(`/transactions/${rejectTx.id}/reject`, { comment: rejectComment });
+      setRejectTx(null); setRejectComment('');
+      fetchTransactions();
+    } catch (err) {
+      setGlobalMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка' });
+    } finally {
+      setRejecting(false);
+    }
+  };
+
+  const fetchDetail = async (id) => {
+    try {
+      const res = await api.get(`/transactions/${id}`);
+      setDetailTx(res.data);
+    } catch (err) { console.error(err); }
+  };
+
+  return (
+    <div>
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title">Транзакции</h1>
+          <p className="page-subtitle">Мониторинг и проверка финансовых операций</p>
+        </div>
+        <div className="page-header-actions">
+          <button className="btn-secondary-sm" onClick={fetchTransactions}>
+            <i className="bi bi-arrow-clockwise"></i> Обновить
+          </button>
+          {(hasRole('ADMIN') || hasRole('OPERATOR')) && (
+            <button className="btn-primary-sm" onClick={openCreate}>
+              <i className="bi bi-plus-lg"></i> Создать транзакцию
+            </button>
+          )}
+        </div>
+      </div>
+
+      {globalMessage && (
+        <div className={`alert-row ${globalMessage.type}`}>
+          <i className="bi bi-exclamation-circle"></i>{globalMessage.text}
+          <button style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16 }} onClick={() => setGlobalMessage(null)}>
+            <i className="bi bi-x"></i>
+          </button>
+        </div>
+      )}
+
+      <div className="content-card">
+        <div className="filter-bar">
+          <span className="filter-label">Статус:</span>
+          <select className="select-modern" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}>
+            <option value="">Все транзакции</option>
+            {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+
+        <div style={{ overflowX: 'auto' }}>
+          {loading ? (
+            <div className="loading-center" style={{ padding: 48 }}>
+              <div className="spinner-modern"></div>
+            </div>
+          ) : (
+            <table className="table-modern">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Клиент</th>
+                  <th>Получатель</th>
+                  <th>Сумма</th>
+                  <th>Статус</th>
+                  <th>Совпадение</th>
+                  <th>Дата</th>
+                  <th>Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.map((tx) => (
+                  <tr key={tx.id}>
+                    <td className="cell-id">#{tx.id}</td>
+                    <td className="cell-name">{tx.clientName}</td>
+                    <td>{tx.recipientName}</td>
+                    <td>
+                      <span className="cell-amount">{tx.amount?.toLocaleString('ru-RU')}</span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>{tx.currency}</span>
+                    </td>
+                    <td><StatusBadge status={tx.status} /></td>
+                    <td><MatchScore tx={tx} /></td>
+                    <td className="muted">{tx.createdAt ? new Date(tx.createdAt).toLocaleDateString('ru-RU') : '—'}</td>
+                    <td>
+                      <div className="actions-cell">
+                        <button className="btn-icon" title="Детали" onClick={() => fetchDetail(tx.id)}>
+                          <i className="bi bi-eye"></i>
+                        </button>
+                        {tx.status === 'BLOCKED_AUTO' && (
+                          <button className="btn-icon warning" title="На проверку" onClick={() => handleSubmitReview(tx.id)}>
+                            <i className="bi bi-send"></i>
+                          </button>
+                        )}
+                        {tx.status === 'UNDER_REVIEW' && hasRole('COMPLIANCE_OFFICER') && (
+                          <>
+                            <button className="btn-icon success" title="Одобрить" onClick={() => { setApproveTx(tx); setApproveComment(''); }}>
+                              <i className="bi bi-check-lg"></i>
+                            </button>
+                            <button className="btn-icon danger" title="Отклонить" onClick={() => { setRejectTx(tx); setRejectComment(''); }}>
+                              <i className="bi bi-x-lg"></i>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {transactions.length === 0 && (
+                  <tr><td colSpan="8">
+                    <div className="empty-state">
+                      <i className="bi bi-inbox"></i>
+                      <p>Транзакции не найдены</p>
+                    </div>
+                  </td></tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+        <Pagination pageData={pageData} onPageChange={setPage} />
+      </div>
+
+      {/* Create Modal */}
+      {showCreate && (
+        <div className="modal-overlay" onClick={() => setShowCreate(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-modern">
+              <h5><div className="modal-icon primary"><i className="bi bi-plus-lg"></i></div> Создать транзакцию</h5>
+              <button className="btn-modal-close" onClick={() => setShowCreate(false)}><i className="bi bi-x"></i></button>
+            </div>
+            <div className="modal-body-modern">
+              {createMsg && <div className="alert-row danger" style={{ marginBottom: 16 }}><i className="bi bi-exclamation-circle"></i>{createMsg.text}</div>}
+              <div className="form-row">
+                <label className="form-field-label">Клиент *</label>
+                <select className="form-select-modern" value={createForm.clientId} onChange={(e) => setCreateForm({ ...createForm, clientId: e.target.value })}>
+                  <option value="">Выберите клиента</option>
+                  {clients.map((c) => <option key={c.id} value={c.id}>{c.fullName}</option>)}
+                </select>
+              </div>
+              <div className="form-row">
+                <label className="form-field-label">Получатель *</label>
+                <input className="form-input" placeholder="ФИО получателя" value={createForm.recipientName}
+                  onChange={(e) => setCreateForm({ ...createForm, recipientName: e.target.value })} />
+              </div>
+              <div className="form-row">
+                <label className="form-field-label">Паспорт получателя</label>
+                <input className="form-input" placeholder="0000 000000" value={createForm.recipientPassport}
+                  onChange={(e) => setCreateForm({ ...createForm, recipientPassport: e.target.value })} />
+              </div>
+              <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10 }}>
+                <div>
+                  <label className="form-field-label">Сумма *</label>
+                  <input type="number" className="form-input" min="0" step="0.01" placeholder="0.00" value={createForm.amount}
+                    onChange={(e) => setCreateForm({ ...createForm, amount: e.target.value })} />
+                </div>
+                <div>
+                  <label className="form-field-label">Валюта</label>
+                  <select className="form-select-modern" value={createForm.currency} onChange={(e) => setCreateForm({ ...createForm, currency: e.target.value })} style={{ minWidth: 90 }}>
+                    {currencies.map((c) => <option key={c}>{c}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer-modern">
+              <button className="btn-secondary-sm" onClick={() => setShowCreate(false)}>Отмена</button>
+              <button className="btn-primary-sm" onClick={handleCreate} disabled={creating}>
+                {creating ? 'Создание...' : <><i className="bi bi-check-lg"></i> Создать</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {detailTx && (
+        <div className="modal-overlay" onClick={() => setDetailTx(null)}>
+          <div className="modal-box wide" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-modern">
+              <h5><div className="modal-icon primary"><i className="bi bi-receipt"></i></div> Транзакция #{detailTx.id}</h5>
+              <button className="btn-modal-close" onClick={() => setDetailTx(null)}><i className="bi bi-x"></i></button>
+            </div>
+            <div className="modal-body-modern">
+              <table className="detail-table">
+                <tbody>
+                  <tr><td>Статус</td><td><StatusBadge status={detailTx.status} /></td></tr>
+                  <tr><td>Клиент</td><td><strong>{detailTx.clientName}</strong></td></tr>
+                  <tr><td>Получатель</td><td><strong>{detailTx.recipientName}</strong></td></tr>
+                  <tr><td>Паспорт получателя</td><td>{detailTx.recipientPassport || '—'}</td></tr>
+                  <tr><td>Сумма</td><td><strong>{detailTx.amount?.toLocaleString('ru-RU')} {detailTx.currency}</strong></td></tr>
+                  <tr><td>Создана</td><td>{detailTx.createdAt ? new Date(detailTx.createdAt).toLocaleString('ru-RU') : '—'}</td></tr>
+                  {detailTx.reviewedBy && <tr><td>Проверил</td><td>{detailTx.reviewedBy}</td></tr>}
+                  {detailTx.reviewComment && <tr><td>Комментарий</td><td style={{ fontStyle: 'italic' }}>"{detailTx.reviewComment}"</td></tr>}
+                </tbody>
+              </table>
+
+              {detailTx.checkResult && (
+                <div className="detail-section">
+                  <div className="detail-section-title">
+                    <i className="bi bi-shield-check" style={{ color: detailTx.checkResult.result === 'HIT' ? 'var(--danger)' : '#2E7D32' }}></i>
+                    Результат автоматической проверки
+                  </div>
+                  <table className="detail-table">
+                    <tbody>
+                      <tr><td>Результат</td><td><StatusBadge status={detailTx.checkResult.result} /></td></tr>
+                      <tr>
+                        <td>Степень совпадения</td>
+                        <td>
+                          <div className="match-score">
+                            <div className="match-score-bar" style={{ width: 80 }}>
+                              <div className="match-score-fill" style={{
+                                width: `${(detailTx.checkResult.matchScore || 0) * 100}%`,
+                                background: detailTx.checkResult.result === 'HIT' ? 'var(--danger)' : '#4CAF50'
+                              }}></div>
+                            </div>
+                            <strong style={{ color: detailTx.checkResult.result === 'HIT' ? 'var(--danger)' : '#2E7D32', fontSize: 15 }}>
+                              {detailTx.checkResult.matchScore != null ? (detailTx.checkResult.matchScore * 100).toFixed(1) + '%' : '—'}
+                            </strong>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr><td>Порог проверки</td><td>{detailTx.checkResult.threshold != null ? (detailTx.checkResult.threshold * 100).toFixed(0) + '%' : '—'}</td></tr>
+                      {detailTx.checkResult.matchedEntryName && (
+                        <tr>
+                          <td>Совпадение с</td>
+                          <td><strong style={{ color: 'var(--danger)' }}>{detailTx.checkResult.matchedEntryName}</strong></td>
+                        </tr>
+                      )}
+                      <tr><td>Алгоритм</td><td>{detailTx.checkResult.algorithm || '—'}</td></tr>
+                      <tr><td>Дата проверки</td><td>{detailTx.checkResult.checkDate ? new Date(detailTx.checkResult.checkDate).toLocaleString('ru-RU') : '—'}</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer-modern">
+              <button className="btn-secondary-sm" onClick={() => setDetailTx(null)}>Закрыть</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approve Modal */}
+      {approveTx && (
+        <div className="modal-overlay" onClick={() => setApproveTx(null)}>
+          <div className="modal-box" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-modern">
+              <h5><div className="modal-icon success"><i className="bi bi-check-circle"></i></div> Одобрить транзакцию #{approveTx.id}</h5>
+              <button className="btn-modal-close" onClick={() => setApproveTx(null)}><i className="bi bi-x"></i></button>
+            </div>
+            <div className="modal-body-modern">
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+                Укажите основание для одобрения транзакции. Это действие будет зафиксировано в системе.
+              </p>
+              <div className="form-row">
+                <label className="form-field-label">Комментарий *</label>
+                <textarea className="form-textarea" rows={3}
+                  placeholder="Укажите основание для одобрения..."
+                  value={approveComment} onChange={(e) => setApproveComment(e.target.value)} />
+              </div>
+            </div>
+            <div className="modal-footer-modern">
+              <button className="btn-secondary-sm" onClick={() => setApproveTx(null)}>Отмена</button>
+              <button className="btn-primary-sm" style={{ background: '#2E7D32' }} onClick={handleApprove} disabled={approving || !approveComment.trim()}>
+                {approving ? 'Одобрение...' : <><i className="bi bi-check-lg"></i> Одобрить</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Modal */}
+      {rejectTx && (
+        <div className="modal-overlay" onClick={() => setRejectTx(null)}>
+          <div className="modal-box" style={{ maxWidth: 440 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-modern">
+              <h5><div className="modal-icon danger"><i className="bi bi-x-circle"></i></div> Отклонить транзакцию #{rejectTx.id}</h5>
+              <button className="btn-modal-close" onClick={() => setRejectTx(null)}><i className="bi bi-x"></i></button>
+            </div>
+            <div className="modal-body-modern">
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+                Укажите причину отклонения. Транзакция будет заблокирована окончательно.
+              </p>
+              <div className="form-row">
+                <label className="form-field-label">Причина отклонения *</label>
+                <textarea className="form-textarea" rows={3}
+                  placeholder="Укажите причину отклонения..."
+                  value={rejectComment} onChange={(e) => setRejectComment(e.target.value)} />
+              </div>
+            </div>
+            <div className="modal-footer-modern">
+              <button className="btn-secondary-sm" onClick={() => setRejectTx(null)}>Отмена</button>
+              <button className="btn-primary-sm" style={{ background: 'var(--danger)' }} onClick={handleReject} disabled={rejecting || !rejectComment.trim()}>
+                {rejecting ? 'Отклонение...' : <><i className="bi bi-x-lg"></i> Отклонить</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+================================================================================
+FILE: front/src/pages/ImportPage.js
+================================================================================
+import React, { useState } from 'react';
+import api from '../api/axios';
+
+const listTypes = ['TERRORIST', 'EXTREMIST', 'SANCTIONS_RU', 'SANCTIONS_EU', 'ROSFINMONITORING'];
+
+export default function ImportPage() {
+  const [jsonData, setJsonData] = useState(null);
+  const [manualRows, setManualRows] = useState([]);
+  const [result, setResult] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [message, setMessage] = useState(null);
+  const [dragOver, setDragOver] = useState(false);
+
+  const parseFile = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = JSON.parse(evt.target.result);
+        if (data.entries && Array.isArray(data.entries)) {
+          setJsonData(data.entries);
+          setMessage(null);
+        } else {
+          setMessage({ type: 'danger', text: 'JSON должен содержать поле "entries" с массивом' });
+        }
+      } catch {
+        setMessage({ type: 'danger', text: 'Неверный формат JSON' });
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleFileInput = (e) => parseFile(e.target.files[0]);
+  const handleDrop = (e) => { e.preventDefault(); setDragOver(false); parseFile(e.dataTransfer.files[0]); };
+  const handleDragOver = (e) => { e.preventDefault(); setDragOver(true); };
+  const handleDragLeave = () => setDragOver(false);
+
+  const doImport = async (entries) => {
+    setImporting(true);
+    try {
+      const res = await api.post('/blacklist/import', { entries });
+      setResult(res.data);
+      setJsonData(null);
+      setManualRows([]);
+    } catch (err) {
+      setMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка импорта' });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const addRow = () => setManualRows([...manualRows, { fullName: '', birthDate: '', passportNumber: '', listType: 'TERRORIST' }]);
+  const updateRow = (i, f, v) => { const u = [...manualRows]; u[i][f] = v; setManualRows(u); };
+  const removeRow = (i) => setManualRows(manualRows.filter((_, idx) => idx !== i));
+
+  return (
+    <div>
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title">Импорт данных</h1>
+          <p className="page-subtitle">Массовая загрузка записей в санкционный список</p>
+        </div>
+      </div>
+
+      {message && (
+        <div className={`alert-row ${message.type}`} style={{ marginBottom: 20 }}>
+          <i className={`bi bi-${message.type === 'danger' ? 'exclamation-circle' : 'check-circle'}`}></i>
+          {message.text}
+        </div>
+      )}
+
+      {result && (
+        <div className="import-result success" style={{ marginBottom: 20 }}>
+          <i className="bi bi-check-circle-fill" style={{ fontSize: 20, flexShrink: 0 }}></i>
+          <div>
+            <strong>Импорт завершён</strong>
+            <div style={{ marginTop: 6, display: 'flex', gap: 20 }}>
+              <span>✅ Импортировано: <strong>{result.imported}</strong></span>
+              <span>⏭ Пропущено: <strong>{result.skipped}</strong></span>
+              <span>❌ Ошибок: <strong>{result.errors}</strong></span>
+            </div>
+            {result.errorMessages?.length > 0 && (
+              <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 20 }}>
+                {result.errorMessages.map((m, i) => <li key={i} style={{ fontSize: 12 }}>{m}</li>)}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* JSON Upload */}
+      <div className="content-card" style={{ marginBottom: 20 }}>
+        <div className="card-header-row">
+          <h5><i className="bi bi-file-earmark-json" style={{ color: 'var(--accent)' }}></i> Загрузка JSON файла</h5>
+        </div>
+        <div className="card-body-pad">
+          <div
+            className={`dropzone ${dragOver ? 'active' : ''}`}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onClick={() => document.getElementById('file-input').click()}
+          >
+            <input id="file-input" type="file" accept=".json" style={{ display: 'none' }} onChange={handleFileInput} />
+            <div className="dropzone-icon">
+              <i className="bi bi-cloud-upload" style={{ color: dragOver ? 'var(--accent)' : 'var(--text-muted)' }}></i>
+            </div>
+            <h6>Перетащите JSON файл или нажмите для выбора</h6>
+            <p>Поддерживаются файлы .json</p>
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 8 }}>Формат файла:</p>
+            <div className="code-block">{`{
+  "entries": [
+    {
+      "fullName": "Иванов Иван Иванович",
+      "birthDate": "1980-05-15",
+      "passportNumber": "4510 123456",
+      "listType": "TERRORIST"
+    }
+  ]
+}`}</div>
+          </div>
+
+          {jsonData && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>
+                  Предпросмотр: <span style={{ color: 'var(--accent)' }}>{jsonData.length} записей</span>
+                </span>
+                <button className="btn-primary-sm" onClick={() => doImport(jsonData)} disabled={importing}>
+                  {importing ? 'Импорт...' : <><i className="bi bi-upload"></i> Импортировать {jsonData.length} записей</>}
+                </button>
+              </div>
+              <div style={{ maxHeight: 240, overflowY: 'auto', borderRadius: 6, border: '1px solid var(--border)' }}>
+                <table className="table-modern">
+                  <thead>
+                    <tr><th>ФИО</th><th>Дата рождения</th><th>Паспорт</th><th>Тип</th></tr>
+                  </thead>
+                  <tbody>
+                    {jsonData.map((e, i) => (
+                      <tr key={i}>
+                        <td>{e.fullName}</td>
+                        <td>{e.birthDate || '—'}</td>
+                        <td>{e.passportNumber || '—'}</td>
+                        <td><span style={{ fontSize: 11, fontWeight: 600 }}>{e.listType}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Manual Input */}
+      <div className="content-card">
+        <div className="card-header-row">
+          <h5><i className="bi bi-table" style={{ color: 'var(--accent)' }}></i> Ручной ввод</h5>
+          <button className="btn-secondary-sm" onClick={addRow}>
+            <i className="bi bi-plus-lg"></i> Добавить строку
+          </button>
+        </div>
+        {manualRows.length === 0 ? (
+          <div className="empty-state">
+            <i className="bi bi-table"></i>
+            <p>Нажмите "Добавить строку" для ручного ввода</p>
+          </div>
+        ) : (
+          <>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="table-modern">
+                <thead>
+                  <tr><th>ФИО *</th><th>Дата рождения</th><th>Паспорт</th><th>Тип списка *</th><th></th></tr>
+                </thead>
+                <tbody>
+                  {manualRows.map((row, i) => (
+                    <tr key={i}>
+                      <td><input className="form-input" style={{ minWidth: 200 }} placeholder="Иванов Иван Иванович" value={row.fullName} onChange={(e) => updateRow(i, 'fullName', e.target.value)} /></td>
+                      <td><input type="date" className="form-input" value={row.birthDate} onChange={(e) => updateRow(i, 'birthDate', e.target.value)} /></td>
+                      <td><input className="form-input" placeholder="0000 000000" value={row.passportNumber} onChange={(e) => updateRow(i, 'passportNumber', e.target.value)} /></td>
+                      <td>
+                        <select className="form-select-modern" value={row.listType} onChange={(e) => updateRow(i, 'listType', e.target.value)}>
+                          {listTypes.map((lt) => <option key={lt} value={lt}>{lt}</option>)}
+                        </select>
+                      </td>
+                      <td>
+                        <button className="btn-icon danger" onClick={() => removeRow(i)}>
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{ padding: '14px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn-primary-sm" onClick={() => doImport(manualRows.filter(r => r.fullName.trim()))} disabled={importing}>
+                {importing ? 'Импорт...' : <><i className="bi bi-upload"></i> Импортировать всё</>}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+FILE: front/src/pages/UsersPage.js
+================================================================================
+import React, { useState } from 'react';
+import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+
+const roleConfig = {
+  ADMIN: { label: 'Администратор', color: '#7B1FA2', bg: '#F3E5F5' },
+  OPERATOR: { label: 'Оператор', color: '#1565C0', bg: '#E3F2FD' },
+  COMPLIANCE_OFFICER: { label: 'Офицер комплаенс', color: '#E65100', bg: '#FFF3E0' },
+};
+
+export default function UsersPage() {
+  const { user } = useAuth();
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ name: '', password: '', email: '', role: 'OPERATOR' });
+  const [message, setMessage] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const resetForm = () => { setForm({ name: '', password: '', email: '', role: 'OPERATOR' }); setMessage(null); };
+
+  const handleSave = async () => {
+    if (!form.name || !form.password || form.password.length < 8) {
+      setMessage({ type: 'danger', text: 'Имя и пароль (мин. 8 символов) обязательны' }); return;
+    }
+    setSaving(true);
+    try {
+      await api.post('/auth/register', form);
+      setMessage({ type: 'success', text: `Пользователь "${form.name}" успешно создан` });
+      setShowModal(false);
+      resetForm();
+    } catch (err) {
+      setMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка создания' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const r = roleConfig[user?.role];
+
+  return (
+    <div>
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title">Пользователи системы</h1>
+          <p className="page-subtitle">Управление учётными записями сотрудников</p>
+        </div>
+        <button className="btn-primary-sm" onClick={() => { resetForm(); setShowModal(true); }}>
+          <i className="bi bi-person-plus"></i> Добавить пользователя
+        </button>
+      </div>
+
+      {message && (
+        <div className={`alert-row ${message.type}`} style={{ marginBottom: 20 }}>
+          <i className={`bi bi-${message.type === 'danger' ? 'exclamation-circle' : 'check-circle'}`}></i>
+          {message.text}
+        </div>
+      )}
+
+      <div className="content-card">
+        <div className="card-body-pad">
+          {/* Current user info */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', background: 'var(--bg)', borderRadius: 'var(--radius-md)', marginBottom: 24 }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent), #42A5F5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: 'white', flexShrink: 0 }}>
+              {user?.username?.slice(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 15 }}>{user?.username}</div>
+              <span style={{ fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: r?.bg, color: r?.color }}>
+                {r?.label}
+              </span>
+            </div>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4CAF50', boxShadow: '0 0 6px rgba(76,175,80,0.6)' }}></div>
+              <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Активная сессия</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 16 }}>
+            {Object.entries(roleConfig).map(([role, { label, color, bg }]) => (
+              <div key={role} style={{ flex: 1, padding: 16, background: bg, borderRadius: 'var(--radius-sm)', border: `1px solid ${color}30` }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{role}</div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-modern">
+              <h5><div className="modal-icon primary"><i className="bi bi-person-plus"></i></div> Добавить пользователя</h5>
+              <button className="btn-modal-close" onClick={() => setShowModal(false)}><i className="bi bi-x"></i></button>
+            </div>
+            <div className="modal-body-modern">
+              {message && <div className="alert-row danger" style={{ marginBottom: 16 }}><i className="bi bi-exclamation-circle"></i>{message.text}</div>}
+              <div className="form-row">
+                <label className="form-field-label">Имя пользователя *</label>
+                <input className="form-input" placeholder="Минимум 3 символа" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              </div>
+              <div className="form-row">
+                <label className="form-field-label">Пароль *</label>
+                <input type="password" className="form-input" placeholder="Минимум 8 символов" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+              </div>
+              <div className="form-row">
+                <label className="form-field-label">Email</label>
+                <input type="email" className="form-input" placeholder="example@mail.ru" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+              <div className="form-row">
+                <label className="form-field-label">Роль</label>
+                <select className="form-select-modern" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+                  {Object.entries(roleConfig).map(([r, { label }]) => <option key={r} value={r}>{label} ({r})</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="modal-footer-modern">
+              <button className="btn-secondary-sm" onClick={() => setShowModal(false)}>Отмена</button>
+              <button className="btn-primary-sm" onClick={handleSave} disabled={saving}>
+                {saving ? 'Создание...' : <><i className="bi bi-check-lg"></i> Создать</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

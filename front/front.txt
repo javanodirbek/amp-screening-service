@@ -1,0 +1,2105 @@
+================================================================================
+AML SCREENING SERVICE - FRONTEND (REACT.JS)
+Barcha frontend fayillari
+================================================================================
+
+================================================================================
+FILE: front/package.json
+================================================================================
+{
+  "name": "aml-screening-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "axios": "^1.7.0",
+    "bootstrap": "^5.3.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.0",
+    "react-scripts": "5.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build"
+  },
+  "browserslist": {
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+  }
+}
+
+================================================================================
+FILE: front/public/index.html
+================================================================================
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AML Screening Service</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="root"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+================================================================================
+FILE: front/src/index.js
+================================================================================
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import App from './App';
+import './App.css';
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <BrowserRouter>
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  </BrowserRouter>
+);
+
+================================================================================
+FILE: front/src/App.js
+================================================================================
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import PrivateRoute from './components/PrivateRoute';
+import Navbar from './components/Navbar';
+import Sidebar from './components/Sidebar';
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import BlacklistPage from './pages/BlacklistPage';
+import ClientsPage from './pages/ClientsPage';
+import TransactionsPage from './pages/TransactionsPage';
+import ImportPage from './pages/ImportPage';
+import UsersPage from './pages/UsersPage';
+
+function AppLayout({ children }) {
+  return (
+    <div className="app-layout">
+      <Navbar />
+      <div className="app-body">
+        <Sidebar />
+        <main className="main-content">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+export default function App() {
+  const { isAuthenticated } = useAuth();
+
+  return (
+    <Routes>
+      <Route path="/login" element={
+        isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />
+      } />
+      <Route path="/dashboard" element={
+        <PrivateRoute><AppLayout><DashboardPage /></AppLayout></PrivateRoute>
+      } />
+      <Route path="/blacklist" element={
+        <PrivateRoute><AppLayout><BlacklistPage /></AppLayout></PrivateRoute>
+      } />
+      <Route path="/clients" element={
+        <PrivateRoute roles={['ADMIN', 'OPERATOR']}><AppLayout><ClientsPage /></AppLayout></PrivateRoute>
+      } />
+      <Route path="/transactions" element={
+        <PrivateRoute><AppLayout><TransactionsPage /></AppLayout></PrivateRoute>
+      } />
+      <Route path="/import" element={
+        <PrivateRoute roles={['ADMIN']}><AppLayout><ImportPage /></AppLayout></PrivateRoute>
+      } />
+      <Route path="/users" element={
+        <PrivateRoute roles={['ADMIN']}><AppLayout><UsersPage /></AppLayout></PrivateRoute>
+      } />
+      <Route path="*" element={<Navigate to="/dashboard" />} />
+    </Routes>
+  );
+}
+
+================================================================================
+FILE: front/src/App.css
+================================================================================
+:root {
+  --primary: #1E3A5F;
+  --accent: #2E86C1;
+  --bg: #F4F6F7;
+  --sidebar-width: 220px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+}
+
+.app-layout { display: flex; flex-direction: column; min-height: 100vh; }
+
+.app-body { display: flex; flex: 1; }
+
+/* Navbar */
+.navbar-top {
+  background: var(--primary);
+  color: white;
+  padding: 0 20px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1030;
+}
+.navbar-brand-link {
+  color: white;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.navbar-role {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+.btn-logout {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 4px 14px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.btn-logout:hover { background: rgba(255,255,255,0.25); }
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--primary);
+  min-height: calc(100vh - 56px);
+  padding-top: 16px;
+  position: fixed;
+  top: 56px;
+  left: 0;
+  bottom: 0;
+  overflow-y: auto;
+}
+.sidebar a {
+  display: block;
+  color: rgba(255,255,255,0.8);
+  text-decoration: none;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+.sidebar a:hover, .sidebar a.active {
+  background: var(--accent);
+  color: white;
+}
+.sidebar-threshold {
+  padding: 10px 20px;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.78rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin-top: 8px;
+}
+
+/* Main content */
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  margin-top: 56px;
+  padding: 24px;
+}
+
+/* Login page */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+}
+.login-card {
+  background: white;
+  border-radius: 8px;
+  padding: 40px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+}
+.login-card h3 { text-align: center; margin-bottom: 24px; color: var(--primary); }
+
+/* Stat cards */
+.stat-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.stat-card .stat-value { font-size: 2rem; font-weight: 700; color: var(--primary); }
+.stat-card .stat-label { font-size: 0.85rem; color: #666; margin-top: 4px; }
+
+/* Page header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.page-header h4 { margin: 0; color: var(--primary); }
+
+/* Content card */
+.content-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+/* Table */
+.table th { font-size: 0.85rem; color: #666; border-top: none; }
+.table td { font-size: 0.88rem; vertical-align: middle; }
+.clickable-row { cursor: pointer; }
+.clickable-row:hover { background: #f0f4ff; }
+
+/* Import JSON */
+.import-dropzone {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+.import-dropzone:hover { border-color: var(--accent); background: #f8faff; }
+
+/* JSON preview */
+.json-example {
+  background: #f8f9fa;
+  border-radius: 6px;
+  padding: 16px;
+  font-size: 0.82rem;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+================================================================================
+FILE: front/src/api/axios.js
+================================================================================
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://localhost:7777',
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.clear();
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api;
+
+================================================================================
+FILE: front/src/context/AuthContext.js
+================================================================================
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import api from '../api/axios';
+
+const AuthContext = createContext(null);
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(() => {
+    const username = localStorage.getItem('username');
+    const role = localStorage.getItem('role');
+    const token = localStorage.getItem('accessToken');
+    if (username && role && token) {
+      return { username, role, accessToken: token };
+    }
+    return null;
+  });
+
+  const login = useCallback(async (username, password) => {
+    const response = await api.post('/auth/login', { username, password });
+    const { accessToken, refreshToken } = response.data;
+
+    localStorage.setItem('accessToken', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    localStorage.setItem('username', username);
+
+    const payload = JSON.parse(atob(accessToken.split('.')[1]));
+    const role = (payload.role || '').replace('ROLE_', '');
+    localStorage.setItem('role', role);
+
+    const userData = { username, role, accessToken };
+    setUser(userData);
+    return userData;
+  }, []);
+
+  const logout = useCallback(() => {
+    localStorage.clear();
+    setUser(null);
+  }, []);
+
+  const hasRole = useCallback((role) => {
+    return localStorage.getItem('role') === role;
+  }, []);
+
+  const isAuthenticated = !!user;
+
+  return (
+    <AuthContext.Provider value={{ user, login, logout, hasRole, isAuthenticated }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+  return context;
+}
+
+================================================================================
+FILE: front/src/components/Navbar.js
+================================================================================
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+export default function Navbar() {
+  const { user, logout } = useAuth();
+
+  return (
+    <nav className="navbar-top">
+      <Link to="/dashboard" className="navbar-brand-link">
+        AML Screening Service
+      </Link>
+      <div className="navbar-user">
+        <span>{user?.username}</span>
+        <span className="navbar-role">({user?.role})</span>
+        <button className="btn-logout" onClick={logout}>Выйти</button>
+      </div>
+    </nav>
+  );
+}
+
+================================================================================
+FILE: front/src/components/Sidebar.js
+================================================================================
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+export default function Sidebar() {
+  const { hasRole } = useAuth();
+
+  return (
+    <aside className="sidebar">
+      <NavLink to="/dashboard" className={({ isActive }) => isActive ? 'active' : ''}>
+        Дашборд
+      </NavLink>
+      <NavLink to="/transactions" className={({ isActive }) => isActive ? 'active' : ''}>
+        Транзакции
+      </NavLink>
+      <NavLink to="/blacklist" className={({ isActive }) => isActive ? 'active' : ''}>
+        Санкционный список
+      </NavLink>
+      {(hasRole('ADMIN') || hasRole('OPERATOR')) && (
+        <NavLink to="/clients" className={({ isActive }) => isActive ? 'active' : ''}>
+          Клиенты
+        </NavLink>
+      )}
+      {hasRole('ADMIN') && (
+        <NavLink to="/import" className={({ isActive }) => isActive ? 'active' : ''}>
+          Импорт JSON
+        </NavLink>
+      )}
+      {hasRole('ADMIN') && (
+        <NavLink to="/users" className={({ isActive }) => isActive ? 'active' : ''}>
+          Пользователи
+        </NavLink>
+      )}
+      <div className="sidebar-threshold">
+        Порог: 80%
+      </div>
+    </aside>
+  );
+}
+
+================================================================================
+FILE: front/src/components/PrivateRoute.js
+================================================================================
+import React from 'react';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+export default function PrivateRoute({ children, roles }) {
+  const { isAuthenticated, hasRole } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  if (roles && roles.length > 0) {
+    const allowed = roles.some((r) => hasRole(r));
+    if (!allowed) {
+      return (
+        <div className="main-content" style={{ marginLeft: 0, marginTop: 56, padding: 40 }}>
+          <div className="alert alert-danger">Доступ запрещён. У вас нет прав для просмотра этой страницы.</div>
+        </div>
+      );
+    }
+  }
+
+  return children;
+}
+
+================================================================================
+FILE: front/src/components/StatusBadge.js
+================================================================================
+import React from 'react';
+
+const statusMap = {
+  CLEAR: 'bg-success',
+  APPROVED: 'bg-success',
+  ACTIVE: 'bg-success',
+  BLOCKED_AUTO: 'bg-danger',
+  REJECTED: 'bg-danger',
+  INACTIVE: 'bg-secondary',
+  HIT: 'bg-danger',
+  UNDER_REVIEW: 'bg-warning text-dark',
+  PENDING: 'bg-secondary',
+  CHECKING: 'bg-info',
+};
+
+export default function StatusBadge({ status }) {
+  const className = statusMap[status] || 'bg-secondary';
+  return (
+    <span className={`badge ${className}`} style={{ fontSize: '0.8rem' }}>
+      {status}
+    </span>
+  );
+}
+
+================================================================================
+FILE: front/src/components/Pagination.js
+================================================================================
+import React from 'react';
+
+export default function Pagination({ pageData, onPageChange }) {
+  if (!pageData || pageData.totalPages <= 1) return null;
+
+  const { number, totalPages, totalElements } = pageData;
+  const currentPage = number;
+
+  const pages = [];
+  for (let i = 0; i < totalPages; i++) {
+    if (i === 0 || i === totalPages - 1 || (i >= currentPage - 2 && i <= currentPage + 2)) {
+      pages.push(i);
+    } else if (pages[pages.length - 1] !== -1) {
+      pages.push(-1);
+    }
+  }
+
+  return (
+    <div className="d-flex justify-content-between align-items-center mt-3">
+      <small className="text-muted">Всего: {totalElements}</small>
+      <nav>
+        <ul className="pagination pagination-sm mb-0">
+          <li className={`page-item ${currentPage === 0 ? 'disabled' : ''}`}>
+            <button className="page-link" onClick={() => onPageChange(currentPage - 1)}>&laquo;</button>
+          </li>
+          {pages.map((p, i) =>
+            p === -1 ? (
+              <li key={`ellipsis-${i}`} className="page-item disabled">
+                <span className="page-link">...</span>
+              </li>
+            ) : (
+              <li key={p} className={`page-item ${p === currentPage ? 'active' : ''}`}>
+                <button className="page-link" onClick={() => onPageChange(p)}>{p + 1}</button>
+              </li>
+            )
+          )}
+          <li className={`page-item ${currentPage >= totalPages - 1 ? 'disabled' : ''}`}>
+            <button className="page-link" onClick={() => onPageChange(currentPage + 1)}>&raquo;</button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  );
+}
+
+================================================================================
+FILE: front/src/components/ConfirmModal.js
+================================================================================
+import React from 'react';
+
+export default function ConfirmModal({ show, title, message, onConfirm, onCancel }) {
+  if (!show) return null;
+
+  return (
+    <>
+      <div className="modal-backdrop fade show" onClick={onCancel}></div>
+      <div className="modal fade show d-block" tabIndex="-1" onClick={onCancel}>
+        <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">{title || 'Подтверждение'}</h5>
+              <button type="button" className="btn-close" onClick={onCancel}></button>
+            </div>
+            <div className="modal-body">
+              <p>{message || 'Вы уверены?'}</p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={onCancel}>Отмена</button>
+              <button className="btn btn-danger" onClick={onConfirm}>Подтвердить</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+================================================================================
+FILE: front/src/pages/LoginPage.js
+================================================================================
+import React, { useState } from 'react';
+import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+
+export default function LoginPage() {
+  const { login } = useAuth();
+  const [mode, setMode] = useState('login');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState('OPERATOR');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    if (!username || !password) {
+      setError('Введите логин и пароль');
+      return;
+    }
+    setLoading(true);
+    try {
+      await login(username, password);
+    } catch (err) {
+      const msg = err.response?.data?.message?.[0] || err.response?.data?.message || 'Ошибка входа';
+      setError(typeof msg === 'string' ? msg : 'Ошибка входа');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    if (!username || !password || password.length < 8) {
+      setError('Имя пользователя и пароль (мин. 8 символов) обязательны');
+      return;
+    }
+    setLoading(true);
+    try {
+      await api.post('/auth/register', { name: username, password, email, role });
+      setSuccess(`Пользователь "${username}" успешно создан. Теперь войдите.`);
+      setUsername('');
+      setPassword('');
+      setEmail('');
+      setMode('login');
+    } catch (err) {
+      const msg = err.response?.data?.message?.[0] || err.response?.data?.message || 'Ошибка регистрации';
+      setError(typeof msg === 'string' ? msg : 'Ошибка регистрации');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const switchMode = () => {
+    setError('');
+    setSuccess('');
+    setMode(mode === 'login' ? 'register' : 'login');
+  };
+
+  return (
+    <div className="login-page">
+      <div className="login-card">
+        <h3>AML Screening Service</h3>
+
+        {error && <div className="alert alert-danger py-2">{error}</div>}
+        {success && <div className="alert alert-success py-2">{success}</div>}
+
+        {mode === 'login' ? (
+          <form onSubmit={handleLogin}>
+            <div className="mb-3">
+              <label className="form-label">Логин</label>
+              <input type="text" className="form-control" value={username}
+                onChange={(e) => setUsername(e.target.value)} autoFocus />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Пароль</label>
+              <input type="password" className="form-control" value={password}
+                onChange={(e) => setPassword(e.target.value)} />
+            </div>
+            <button type="submit" className="btn btn-primary w-100" disabled={loading}
+              style={{ background: 'var(--primary)', borderColor: 'var(--primary)' }}>
+              {loading ? <span className="spinner-border spinner-border-sm me-2"></span> : null}
+              Войти
+            </button>
+            <div className="text-center mt-3">
+              <button type="button" className="btn btn-link btn-sm" onClick={switchMode}
+                style={{ color: 'var(--accent)' }}>
+                Нет аккаунта? Зарегистрироваться
+              </button>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleRegister}>
+            <div className="mb-3">
+              <label className="form-label">Имя пользователя *</label>
+              <input type="text" className="form-control" value={username}
+                onChange={(e) => setUsername(e.target.value)} autoFocus />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Пароль * (мин. 8 символов)</label>
+              <input type="password" className="form-control" value={password}
+                onChange={(e) => setPassword(e.target.value)} />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Email</label>
+              <input type="email" className="form-control" value={email}
+                onChange={(e) => setEmail(e.target.value)} />
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Роль</label>
+              <select className="form-select" value={role}
+                onChange={(e) => setRole(e.target.value)}>
+                <option value="ADMIN">ADMIN</option>
+                <option value="OPERATOR">OPERATOR</option>
+                <option value="COMPLIANCE_OFFICER">COMPLIANCE_OFFICER</option>
+              </select>
+            </div>
+            <button type="submit" className="btn btn-success w-100" disabled={loading}>
+              {loading ? <span className="spinner-border spinner-border-sm me-2"></span> : null}
+              Зарегистрироваться
+            </button>
+            <div className="text-center mt-3">
+              <button type="button" className="btn btn-link btn-sm" onClick={switchMode}
+                style={{ color: 'var(--accent)' }}>
+                  Уже есть аккаунт? Войти
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+FILE: front/src/pages/DashboardPage.js
+================================================================================
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../api/axios';
+import StatusBadge from '../components/StatusBadge';
+
+export default function DashboardPage() {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState({ total: 0, blocked: 0, underReview: 0, blacklist: 0 });
+  const [recentTx, setRecentTx] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [txRes, blRes] = await Promise.all([
+          api.get('/transactions?page=0&size=100'),
+          api.get('/blacklist?status=ACTIVE&page=0&size=1'),
+        ]);
+
+        const content = txRes.data.content || [];
+        const total = txRes.data.totalElements || 0;
+        const blocked = content.filter((t) => t.status === 'BLOCKED_AUTO').length;
+        const underReview = content.filter((t) => t.status === 'UNDER_REVIEW').length;
+        const blacklist = blRes.data.totalElements || 0;
+
+        setStats({ total, blocked, underReview, blacklist });
+        setRecentTx(content.slice(0, 10));
+      } catch (err) {
+        console.error('Dashboard fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return <div className="text-center mt-5"><div className="spinner-border"></div></div>;
+  }
+
+  return (
+    <div>
+      <h4 className="mb-3" style={{ color: 'var(--primary)' }}>Дашборд</h4>
+
+      <div className="stat-cards">
+        <div className="stat-card">
+          <div className="stat-value">{stats.total}</div>
+          <div className="stat-label">Всего транзакций</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value text-danger">{stats.blocked}</div>
+          <div className="stat-label">Заблокировано</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value text-warning">{stats.underReview}</div>
+          <div className="stat-label">На рассмотрении</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value">{stats.blacklist}</div>
+          <div className="stat-label">Активных в чёрном списке</div>
+        </div>
+      </div>
+
+      <div className="content-card">
+        <h5 className="mb-3">Последние транзакции</h5>
+        <div className="table-responsive">
+          <table className="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Клиент</th>
+                <th>Получатель</th>
+                <th>Сумма</th>
+                <th>Валюта</th>
+                <th>Статус</th>
+                <th>Дата</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentTx.map((tx) => (
+                <tr key={tx.id} className="clickable-row" onClick={() => navigate('/transactions')}>
+                  <td>{tx.id}</td>
+                  <td>{tx.clientName}</td>
+                  <td>{tx.recipientName}</td>
+                  <td>{tx.amount?.toLocaleString?.('ru-RU') || tx.amount}</td>
+                  <td>{tx.currency}</td>
+                  <td><StatusBadge status={tx.status} /></td>
+                  <td>{tx.createdAt ? new Date(tx.createdAt).toLocaleDateString('ru-RU') : '-'}</td>
+                </tr>
+              ))}
+              {recentTx.length === 0 && (
+                <tr><td colSpan="7" className="text-center text-muted">Нет транзакций</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+FILE: front/src/pages/BlacklistPage.js
+================================================================================
+import React, { useState, useEffect } from 'react';
+import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+import StatusBadge from '../components/StatusBadge';
+import Pagination from '../components/Pagination';
+import ConfirmModal from '../components/ConfirmModal';
+
+const listTypes = ['TERRORIST', 'EXTREMIST', 'SANCTIONS_RU', 'SANCTIONS_EU', 'ROSFINMONITORING'];
+
+export default function BlacklistPage() {
+  const { hasRole } = useAuth();
+  const [entries, setEntries] = useState([]);
+  const [pageData, setPageData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [statusFilter, setStatusFilter] = useState('ACTIVE');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [detailEntry, setDetailEntry] = useState(null);
+  const [form, setForm] = useState({ fullName: '', birthDate: '', passportNumber: '', inn: '', listType: 'TERRORIST' });
+  const [message, setMessage] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+
+  const fetchEntries = async () => {
+    setLoading(true);
+    try {
+      const params = { page, size: 10 };
+      if (statusFilter) params.status = statusFilter;
+      if (typeFilter) params.listType = typeFilter;
+      const res = await api.get('/blacklist', { params });
+      setEntries(res.data.content || []);
+      setPageData(res.data);
+    } catch (err) {
+      console.error('Blacklist fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchEntries(); }, [page, statusFilter, typeFilter]);
+
+  const resetForm = () => {
+    setForm({ fullName: '', birthDate: '', passportNumber: '', inn: '', listType: 'TERRORIST' });
+    setMessage(null);
+  };
+
+  const openAddModal = () => {
+    setEditingEntry(null);
+    resetForm();
+    setShowModal(true);
+  };
+
+  const openEditModal = (entry) => {
+    setEditingEntry(entry);
+    setForm({
+      fullName: entry.fullName || '',
+      birthDate: entry.birthDate || '',
+      passportNumber: entry.passportNumber || '',
+      inn: entry.inn || '',
+      listType: entry.listType || 'TERRORIST',
+    });
+    setMessage(null);
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.fullName.trim()) {
+      setMessage({ type: 'danger', text: 'Имя обязательно' });
+      return;
+    }
+    setSaving(true);
+    try {
+      if (editingEntry) {
+        await api.patch(`/blacklist/${editingEntry.id}`, form);
+      } else {
+        await api.post('/blacklist', form);
+      }
+      setShowModal(false);
+      resetForm();
+      fetchEntries();
+    } catch (err) {
+      setMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (!confirmDelete) return;
+    try {
+      await api.delete(`/blacklist/${confirmDelete.id}`);
+      setConfirmDelete(null);
+      fetchEntries();
+    } catch (err) {
+      setMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка удаления' });
+      setConfirmDelete(null);
+    }
+  };
+
+  if (loading && entries.length === 0) {
+    return <div className="text-center mt-5"><div className="spinner-border"></div></div>;
+  }
+
+  return (
+    <div>
+      <div className="page-header">
+        <h4>Санкционный список</h4>
+        {hasRole('ADMIN') && (
+          <button className="btn btn-primary" style={{ background: 'var(--primary)', borderColor: 'var(--primary)' }}
+            onClick={openAddModal}>
+            + Добавить запись
+          </button>
+        )}
+      </div>
+
+      {message && <div className={`alert alert-${message.type} py-2`}>{message.text}</div>}
+
+      <div className="content-card">
+        <div className="row mb-3">
+          <div className="col-auto">
+            <select className="form-select form-select-sm" value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}>
+              <option value="">Все статусы</option>
+              <option value="ACTIVE">Активные</option>
+              <option value="INACTIVE">Неактивные</option>
+            </select>
+          </div>
+          <div className="col-auto">
+            <select className="form-select form-select-sm" value={typeFilter}
+              onChange={(e) => { setTypeFilter(e.target.value); setPage(0); }}>
+              <option value="">Все типы</option>
+              {listTypes.map((lt) => <option key={lt} value={lt}>{lt}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="table-responsive">
+          <table className="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>ФИО</th>
+                <th>Паспорт</th>
+                <th>ИНН</th>
+                <th>Тип списка</th>
+                <th>Статус</th>
+                <th>Добавил</th>
+                <th>Дата</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {entries.map((e) => (
+                <tr key={e.id} style={{ cursor: 'pointer' }} onClick={() => setDetailEntry(e)}>
+                  <td>{e.id}</td>
+                  <td>{e.fullName}</td>
+                  <td>{e.passportNumber || '-'}</td>
+                  <td>{e.inn || '-'}</td>
+                  <td>{e.listType}</td>
+                  <td><StatusBadge status={e.status} /></td>
+                  <td>{e.addedBy || '-'}</td>
+                  <td>{e.addedAt ? new Date(e.addedAt).toLocaleDateString('ru-RU') : '-'}</td>
+                  <td onClick={(ev) => ev.stopPropagation()}>
+                    {(hasRole('ADMIN') || hasRole('COMPLIANCE_OFFICER')) && (
+                      <button className="btn btn-sm btn-outline-primary me-1" onClick={() => openEditModal(e)}>
+                        Изм.
+                      </button>
+                    )}
+                    {hasRole('ADMIN') && e.status === 'ACTIVE' && (
+                      <button className="btn btn-sm btn-outline-danger" onClick={() => setConfirmDelete(e)}>
+                        Деактив.
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {entries.length === 0 && (
+                <tr><td colSpan="9" className="text-center text-muted">Нет записей</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <Pagination pageData={pageData} onPageChange={setPage} />
+      </div>
+
+      {/* Add/Edit Modal */}
+      {showModal && (
+        <>
+          <div className="modal-backdrop fade show" onClick={() => setShowModal(false)}></div>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">{editingEntry ? 'Редактировать запись' : 'Добавить запись'}</h5>
+                  <button className="btn-close" onClick={() => setShowModal(false)}></button>
+                </div>
+                <div className="modal-body">
+                  {message && <div className={`alert alert-${message.type} py-2`}>{message.text}</div>}
+                  <div className="mb-3">
+                    <label className="form-label">ФИО *</label>
+                    <input type="text" className="form-control" value={form.fullName}
+                      onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Дата рождения</label>
+                    <input type="date" className="form-control" value={form.birthDate}
+                      onChange={(e) => setForm({ ...form, birthDate: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Номер паспорта</label>
+                    <input type="text" className="form-control" value={form.passportNumber}
+                      onChange={(e) => setForm({ ...form, passportNumber: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">ИНН</label>
+                    <input type="text" className="form-control" maxLength={12} value={form.inn}
+                      onChange={(e) => setForm({ ...form, inn: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Тип списка</label>
+                    <select className="form-select" value={form.listType}
+                      onChange={(e) => setForm({ ...form, listType: e.target.value })}>
+                      {listTypes.map((lt) => <option key={lt} value={lt}>{lt}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Отмена</button>
+                  <button className="btn btn-primary" onClick={handleSave} disabled={saving}
+                    style={{ background: 'var(--primary)', borderColor: 'var(--primary)' }}>
+                    {saving ? <span className="spinner-border spinner-border-sm me-1"></span> : null}
+                    Сохранить
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Detail Modal */}
+      {detailEntry && (
+        <>
+          <div className="modal-backdrop fade show" onClick={() => setDetailEntry(null)}></div>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Запись #{detailEntry.id}</h5>
+                  <button className="btn-close" onClick={() => setDetailEntry(null)}></button>
+                </div>
+                <div className="modal-body">
+                  <table className="table table-sm">
+                    <tbody>
+                      <tr><td><strong>ID</strong></td><td>{detailEntry.id}</td></tr>
+                      <tr><td><strong>ФИО</strong></td><td>{detailEntry.fullName}</td></tr>
+                      <tr><td><strong>Дата рождения</strong></td><td>{detailEntry.birthDate || '-'}</td></tr>
+                      <tr><td><strong>Паспорт</strong></td><td>{detailEntry.passportNumber || '-'}</td></tr>
+                      <tr><td><strong>ИНН</strong></td><td>{detailEntry.inn || '-'}</td></tr>
+                      <tr><td><strong>Тип списка</strong></td><td>{detailEntry.listType}</td></tr>
+                      <tr><td><strong>Статус</strong></td><td><StatusBadge status={detailEntry.status} /></td></tr>
+                      <tr><td><strong>Добавил</strong></td><td>{detailEntry.addedBy || '-'}</td></tr>
+                      <tr><td><strong>Добавлен</strong></td><td>{detailEntry.addedAt ? new Date(detailEntry.addedAt).toLocaleString('ru-RU') : '-'}</td></tr>
+                      <tr><td><strong>Обновлён</strong></td><td>{detailEntry.updatedAt ? new Date(detailEntry.updatedAt).toLocaleString('ru-RU') : '-'}</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setDetailEntry(null)}>Закрыть</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      <ConfirmModal
+        show={!!confirmDelete}
+        title="Деактивировать запись"
+        message={`Вы уверены, что хотите деактивировать запись "${confirmDelete?.fullName}"?`}
+        onConfirm={handleDeactivate}
+        onCancel={() => setConfirmDelete(null)}
+      />
+    </div>
+  );
+}
+
+================================================================================
+FILE: front/src/pages/ClientsPage.js
+================================================================================
+import React, { useState, useEffect } from 'react';
+import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+
+export default function ClientsPage() {
+  const { hasRole } = useAuth();
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [detailClient, setDetailClient] = useState(null);
+  const [form, setForm] = useState({ fullName: '', birthDate: '', passportNumber: '', inn: '', phone: '', email: '' });
+  const [message, setMessage] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const fetchClients = async () => {
+    try {
+      const res = await api.get('/clients');
+      setClients(res.data);
+    } catch (err) {
+      console.error('Clients fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchClients(); }, []);
+
+  const resetForm = () => {
+    setForm({ fullName: '', birthDate: '', passportNumber: '', inn: '', phone: '', email: '' });
+    setMessage(null);
+  };
+
+  const handleSave = async () => {
+    if (!form.fullName) {
+      setMessage({ type: 'danger', text: 'Имя обязательно' });
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.post('/clients', form);
+      setShowModal(false);
+      resetForm();
+      fetchClients();
+    } catch (err) {
+      setMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center mt-5"><div className="spinner-border"></div></div>;
+  }
+
+  return (
+    <div>
+      <div className="page-header">
+        <h4>Клиенты</h4>
+        {(hasRole('ADMIN') || hasRole('OPERATOR')) && (
+          <button className="btn btn-primary" style={{ background: 'var(--primary)', borderColor: 'var(--primary)' }}
+            onClick={() => { resetForm(); setShowModal(true); }}>
+            + Добавить клиента
+          </button>
+        )}
+      </div>
+
+      <div className="content-card">
+        <div className="table-responsive">
+          <table className="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>ФИО</th>
+                <th>Паспорт</th>
+                <th>Телефон</th>
+                <th>Email</th>
+                <th>Статус</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clients.map((c) => (
+                <tr key={c.id}>
+                  <td>{c.id}</td>
+                  <td>{c.fullName}</td>
+                  <td>{c.passportNumber || '-'}</td>
+                  <td>{c.phone || '-'}</td>
+                  <td>{c.email || '-'}</td>
+                  <td>{c.status || '-'}</td>
+                  <td>
+                    <button className="btn btn-sm btn-outline-primary"
+                      onClick={() => setDetailClient(c)}>
+                      Просмотр
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {clients.length === 0 && (
+                <tr><td colSpan="7" className="text-center text-muted">Нет клиентов</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Add Client Modal */}
+      {showModal && (
+        <>
+          <div className="modal-backdrop fade show" onClick={() => setShowModal(false)}></div>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Добавить клиента</h5>
+                  <button className="btn-close" onClick={() => setShowModal(false)}></button>
+                </div>
+                <div className="modal-body">
+                  {message && <div className={`alert alert-${message.type} py-2`}>{message.text}</div>}
+                  <div className="mb-3">
+                    <label className="form-label">ФИО *</label>
+                    <input type="text" className="form-control" value={form.fullName}
+                      onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Дата рождения</label>
+                    <input type="date" className="form-control" value={form.birthDate}
+                      onChange={(e) => setForm({ ...form, birthDate: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Номер паспорта</label>
+                    <input type="text" className="form-control" value={form.passportNumber}
+                      onChange={(e) => setForm({ ...form, passportNumber: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">ИНН</label>
+                    <input type="text" className="form-control" value={form.inn}
+                      onChange={(e) => setForm({ ...form, inn: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Телефон</label>
+                    <input type="text" className="form-control" value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Email</label>
+                    <input type="email" className="form-control" value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Отмена</button>
+                  <button className="btn btn-primary" onClick={handleSave} disabled={saving}
+                    style={{ background: 'var(--primary)', borderColor: 'var(--primary)' }}>
+                    {saving ? <span className="spinner-border spinner-border-sm me-1"></span> : null}
+                    Сохранить
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Detail Modal */}
+      {detailClient && (
+        <>
+          <div className="modal-backdrop fade show" onClick={() => setDetailClient(null)}></div>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Клиент: {detailClient.fullName}</h5>
+                  <button className="btn-close" onClick={() => setDetailClient(null)}></button>
+                </div>
+                <div className="modal-body">
+                  <table className="table table-sm">
+                    <tbody>
+                      <tr><td><strong>ID</strong></td><td>{detailClient.id}</td></tr>
+                      <tr><td><strong>ФИО</strong></td><td>{detailClient.fullName}</td></tr>
+                      <tr><td><strong>Дата рождения</strong></td><td>{detailClient.birthDate || '-'}</td></tr>
+                      <tr><td><strong>Паспорт</strong></td><td>{detailClient.passportNumber || '-'}</td></tr>
+                      <tr><td><strong>ИНН</strong></td><td>{detailClient.inn || '-'}</td></tr>
+                      <tr><td><strong>Телефон</strong></td><td>{detailClient.phone || '-'}</td></tr>
+                      <tr><td><strong>Email</strong></td><td>{detailClient.email || '-'}</td></tr>
+                      <tr><td><strong>Статус</strong></td><td>{detailClient.status}</td></tr>
+                      <tr><td><strong>Создан</strong></td><td>{detailClient.createdAt ? new Date(detailClient.createdAt).toLocaleString('ru-RU') : '-'}</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setDetailClient(null)}>Закрыть</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+================================================================================
+FILE: front/src/pages/TransactionsPage.js
+================================================================================
+import React, { useState, useEffect, useCallback } from 'react';
+import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+import StatusBadge from '../components/StatusBadge';
+import Pagination from '../components/Pagination';
+
+const statuses = ['PENDING', 'CHECKING', 'CLEAR', 'BLOCKED_AUTO', 'UNDER_REVIEW', 'APPROVED', 'REJECTED'];
+const currencies = ['RUB', 'USD', 'EUR'];
+
+export default function TransactionsPage() {
+  const { hasRole } = useAuth();
+  const [transactions, setTransactions] = useState([]);
+  const [pageData, setPageData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [message, setMessage] = useState(null);
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [clients, setClients] = useState([]);
+  const [createForm, setCreateForm] = useState({ clientId: '', recipientName: '', recipientPassport: '', amount: '', currency: 'RUB' });
+  const [creating, setCreating] = useState(false);
+
+  const [detailTx, setDetailTx] = useState(null);
+
+  const [approveTx, setApproveTx] = useState(null);
+  const [approveComment, setApproveComment] = useState('');
+  const [approving, setApproving] = useState(false);
+
+  const [rejectTx, setRejectTx] = useState(null);
+  const [rejectComment, setRejectComment] = useState('');
+  const [rejecting, setRejecting] = useState(false);
+
+  const fetchTransactions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = { page, size: 10 };
+      if (statusFilter) params.status = statusFilter;
+      const res = await api.get('/transactions', { params });
+      setTransactions(res.data.content || []);
+      setPageData(res.data);
+    } catch (err) {
+      console.error('Transactions fetch error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, statusFilter]);
+
+  useEffect(() => { fetchTransactions(); }, [fetchTransactions]);
+
+  useEffect(() => {
+    const hasChecking = transactions.some((t) => t.status === 'CHECKING');
+    if (!hasChecking) return;
+    const timer = setTimeout(() => fetchTransactions(), 30000);
+    return () => clearTimeout(timer);
+  }, [transactions, fetchTransactions]);
+
+  const loadClients = async () => {
+    try {
+      const res = await api.get('/clients');
+      setClients(res.data || []);
+    } catch (err) {
+      console.error('Clients fetch error:', err);
+    }
+  };
+
+  const openCreateModal = () => {
+    loadClients();
+    setCreateForm({ clientId: '', recipientName: '', recipientPassport: '', amount: '', currency: 'RUB' });
+    setMessage(null);
+    setShowCreateModal(true);
+  };
+
+  const handleCreate = async () => {
+    if (!createForm.clientId || !createForm.recipientName.trim() || !createForm.amount) {
+      setMessage({ type: 'danger', text: 'Клиент, получатель и сумма обязательны' });
+      return;
+    }
+    if (parseFloat(createForm.amount) <= 0) {
+      setMessage({ type: 'danger', text: 'Сумма должна быть положительной' });
+      return;
+    }
+    setCreating(true);
+    try {
+      const res = await api.post('/transactions', {
+        clientId: parseInt(createForm.clientId),
+        recipientName: createForm.recipientName,
+        recipientPassport: createForm.recipientPassport,
+        amount: parseFloat(createForm.amount),
+        currency: createForm.currency,
+      });
+      setShowCreateModal(false);
+      const tx = res.data;
+      fetchTransactions();
+    } catch (err) {
+      setMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка создания' });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleSubmitReview = async (id) => {
+    try {
+      await api.post(`/transactions/${id}/submit-review`);
+      fetchTransactions();
+    } catch (err) {
+      setMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка' });
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!approveComment.trim()) {
+      return;
+    }
+    setApproving(true);
+    try {
+      await api.post(`/transactions/${approveTx.id}/approve`, { comment: approveComment });
+      setApproveTx(null);
+      setApproveComment('');
+      fetchTransactions();
+    } catch (err) {
+      setMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка' });
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectComment.trim()) {
+      return;
+    }
+    setRejecting(true);
+    try {
+      await api.post(`/transactions/${rejectTx.id}/reject`, { comment: rejectComment });
+      setRejectTx(null);
+      setRejectComment('');
+      fetchTransactions();
+    } catch (err) {
+      setMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка' });
+    } finally {
+      setRejecting(false);
+    }
+  };
+
+  const fetchDetail = async (id) => {
+    try {
+      const res = await api.get(`/transactions/${id}`);
+      setDetailTx(res.data);
+    } catch (err) {
+      console.error('Detail fetch error:', err);
+    }
+  };
+
+  const matchScorePercent = (tx) => {
+    if (!tx.checkResult) return '-';
+    const score = tx.checkResult.matchScore;
+    if (score == null) return '-';
+    return (score * 100).toFixed(1) + '%';
+  };
+
+  const matchScoreColor = (tx) => {
+    if (!tx.checkResult) return {};
+    if (tx.checkResult.result === 'HIT') return { color: 'var(--bs-danger)' };
+    return { color: 'var(--bs-success)' };
+  };
+
+  if (loading && transactions.length === 0) {
+    return <div className="text-center mt-5"><div className="spinner-border"></div></div>;
+  }
+
+  return (
+    <div>
+      <div className="page-header">
+        <h4>Транзакции</h4>
+        <div className="d-flex gap-2">
+          {(hasRole('ADMIN') || hasRole('OPERATOR')) && (
+            <button className="btn btn-primary" style={{ background: 'var(--primary)', borderColor: 'var(--primary)' }}
+              onClick={openCreateModal}>
+              + Создать транзакцию
+            </button>
+          )}
+          <button className="btn btn-outline-secondary" onClick={fetchTransactions}>Обновить</button>
+        </div>
+      </div>
+
+      {message && <div className={`alert alert-${message.type} py-2`}>{message.text}</div>}
+
+      <div className="content-card">
+        <div className="row mb-3">
+          <div className="col-auto">
+            <select className="form-select form-select-sm" value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}>
+              <option value="">Все статусы</option>
+              {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="table-responsive">
+          <table className="table table-striped table-hover">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Клиент</th>
+                <th>Получатель</th>
+                <th>Сумма</th>
+                <th>Валюта</th>
+                <th>Статус</th>
+                <th>Совпадение</th>
+                <th>Дата</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.map((tx) => (
+                <tr key={tx.id}>
+                  <td>{tx.id}</td>
+                  <td>{tx.clientName}</td>
+                  <td>{tx.recipientName}</td>
+                  <td>{tx.amount?.toLocaleString?.('ru-RU') || tx.amount}</td>
+                  <td>{tx.currency}</td>
+                  <td><StatusBadge status={tx.status} /></td>
+                  <td><strong style={matchScoreColor(tx)}>{matchScorePercent(tx)}</strong></td>
+                  <td>{tx.createdAt ? new Date(tx.createdAt).toLocaleDateString('ru-RU') : '-'}</td>
+                  <td>
+                    <button className="btn btn-sm btn-outline-primary me-1"
+                      onClick={() => fetchDetail(tx.id)}>Детали</button>
+                    {tx.status === 'BLOCKED_AUTO' && (hasRole('ADMIN') || hasRole('OPERATOR') || hasRole('COMPLIANCE_OFFICER')) && (
+                      <button className="btn btn-sm btn-outline-warning me-1"
+                        onClick={() => handleSubmitReview(tx.id)}>На проверку</button>
+                    )}
+                    {tx.status === 'UNDER_REVIEW' && hasRole('COMPLIANCE_OFFICER') && (
+                      <>
+                        <button className="btn btn-sm btn-outline-success me-1"
+                          onClick={() => { setApproveTx(tx); setApproveComment(''); }}>Одобрить</button>
+                        <button className="btn btn-sm btn-outline-danger"
+                          onClick={() => { setRejectTx(tx); setRejectComment(''); }}>Отклонить</button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {transactions.length === 0 && (
+                <tr><td colSpan="9" className="text-center text-muted">Нет транзакций</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <Pagination pageData={pageData} onPageChange={setPage} />
+      </div>
+
+      {/* Create Transaction Modal */}
+      {showCreateModal && (
+        <>
+          <div className="modal-backdrop fade show" onClick={() => setShowCreateModal(false)}></div>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Создать транзакцию</h5>
+                  <button className="btn-close" onClick={() => setShowCreateModal(false)}></button>
+                </div>
+                <div className="modal-body">
+                  {message && <div className={`alert alert-${message.type} py-2`}>{message.text}</div>}
+                  <div className="mb-3">
+                    <label className="form-label">Клиент *</label>
+                    <select className="form-select" value={createForm.clientId}
+                      onChange={(e) => setCreateForm({ ...createForm, clientId: e.target.value })}>
+                      <option value="">Выберите клиента</option>
+                      {clients.map((c) => <option key={c.id} value={c.id}>{c.fullName}</option>)}
+                    </select>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Получатель *</label>
+                    <input type="text" className="form-control" value={createForm.recipientName}
+                      onChange={(e) => setCreateForm({ ...createForm, recipientName: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Паспорт получателя</label>
+                    <input type="text" className="form-control" value={createForm.recipientPassport}
+                      onChange={(e) => setCreateForm({ ...createForm, recipientPassport: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Сумма *</label>
+                    <input type="number" className="form-control" min="0" step="0.01" value={createForm.amount}
+                      onChange={(e) => setCreateForm({ ...createForm, amount: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Валюта</label>
+                    <select className="form-select" value={createForm.currency}
+                      onChange={(e) => setCreateForm({ ...createForm, currency: e.target.value })}>
+                      {currencies.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setShowCreateModal(false)}>Отмена</button>
+                  <button className="btn btn-primary" onClick={handleCreate} disabled={creating}
+                    style={{ background: 'var(--primary)', borderColor: 'var(--primary)' }}>
+                    {creating ? <span className="spinner-border spinner-border-sm me-1"></span> : null}
+                    Создать
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Detail Modal */}
+      {detailTx && (
+        <>
+          <div className="modal-backdrop fade show" onClick={() => setDetailTx(null)}></div>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog modal-lg" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Транзакция #{detailTx.id}</h5>
+                  <button className="btn-close" onClick={() => setDetailTx(null)}></button>
+                </div>
+                <div className="modal-body">
+                  <h6>Основная информация</h6>
+                  <table className="table table-sm">
+                    <tbody>
+                      <tr><td><strong>ID</strong></td><td>{detailTx.id}</td></tr>
+                      <tr><td><strong>Клиент</strong></td><td>{detailTx.clientName}</td></tr>
+                      <tr><td><strong>Получатель</strong></td><td>{detailTx.recipientName}</td></tr>
+                      <tr><td><strong>Паспорт получателя</strong></td><td>{detailTx.recipientPassport || '-'}</td></tr>
+                      <tr><td><strong>Сумма</strong></td><td>{detailTx.amount?.toLocaleString?.('ru-RU') || detailTx.amount} {detailTx.currency}</td></tr>
+                      <tr><td><strong>Статус</strong></td><td><StatusBadge status={detailTx.status} /></td></tr>
+                      <tr><td><strong>Создана</strong></td><td>{detailTx.createdAt ? new Date(detailTx.createdAt).toLocaleString('ru-RU') : '-'}</td></tr>
+                      <tr><td><strong>Обновлена</strong></td><td>{detailTx.updatedAt ? new Date(detailTx.updatedAt).toLocaleString('ru-RU') : '-'}</td></tr>
+                      {detailTx.reviewedBy && <tr><td><strong>Проверил</strong></td><td>{detailTx.reviewedBy}</td></tr>}
+                      {detailTx.reviewComment && <tr><td><strong>Комментарий</strong></td><td>{detailTx.reviewComment}</td></tr>}
+                    </tbody>
+                  </table>
+
+                  {detailTx.checkResult && (
+                    <>
+                      <h6 className="mt-3">Результат проверки</h6>
+                      <table className="table table-sm">
+                        <tbody>
+                          <tr>
+                            <td><strong>Результат</strong></td>
+                            <td><StatusBadge status={detailTx.checkResult.result} /></td>
+                          </tr>
+                          <tr>
+                            <td><strong>Процент совпадения</strong></td>
+                            <td><strong style={detailTx.checkResult.result === 'HIT' ? { color: 'var(--bs-danger)' } : { color: 'var(--bs-success)' }}>
+                              {detailTx.checkResult.matchScore != null ? (detailTx.checkResult.matchScore * 100).toFixed(1) + '%' : '-'}
+                            </strong></td>
+                          </tr>
+                          <tr>
+                            <td><strong>Порог</strong></td>
+                            <td>{detailTx.checkResult.threshold != null ? (detailTx.checkResult.threshold * 100).toFixed(0) + '%' : '-'}</td>
+                          </tr>
+                          {detailTx.checkResult.matchedEntryName && (
+                            <tr>
+                              <td><strong>Совпавшая запись</strong></td>
+                              <td>{detailTx.checkResult.matchedEntryName}</td>
+                            </tr>
+                          )}
+                          <tr>
+                            <td><strong>Алгоритм</strong></td>
+                            <td>{detailTx.checkResult.algorithm || '-'}</td>
+                          </tr>
+                          <tr>
+                            <td><strong>Дата проверки</strong></td>
+                            <td>{detailTx.checkResult.checkDate ? new Date(detailTx.checkResult.checkDate).toLocaleString('ru-RU') : '-'}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setDetailTx(null)}>Закрыть</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Approve Modal */}
+      {approveTx && (
+        <>
+          <div className="modal-backdrop fade show" onClick={() => setApproveTx(null)}></div>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Одобрить транзакцию #{approveTx.id}</h5>
+                  <button className="btn-close" onClick={() => setApproveTx(null)}></button>
+                </div>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Комментарий *</label>
+                    <textarea className="form-control" rows="3" value={approveComment}
+                      onChange={(e) => setApproveComment(e.target.value)}></textarea>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setApproveTx(null)}>Отмена</button>
+                  <button className="btn btn-success" onClick={handleApprove} disabled={approving || !approveComment.trim()}>
+                    {approving ? <span className="spinner-border spinner-border-sm me-1"></span> : null}
+                    Одобрить
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Reject Modal */}
+      {rejectTx && (
+        <>
+          <div className="modal-backdrop fade show" onClick={() => setRejectTx(null)}></div>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Отклонить транзакцию #{rejectTx.id}</h5>
+                  <button className="btn-close" onClick={() => setRejectTx(null)}></button>
+                </div>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <label className="form-label">Комментарий *</label>
+                    <textarea className="form-control" rows="3" value={rejectComment}
+                      onChange={(e) => setRejectComment(e.target.value)}></textarea>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setRejectTx(null)}>Отмена</button>
+                  <button className="btn btn-danger" onClick={handleReject} disabled={rejecting || !rejectComment.trim()}>
+                    {rejecting ? <span className="spinner-border spinner-border-sm me-1"></span> : null}
+                    Отклонить
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+================================================================================
+FILE: front/src/pages/ImportPage.js
+================================================================================
+import React, { useState } from 'react';
+import api from '../api/axios';
+
+export default function ImportPage() {
+  const [jsonData, setJsonData] = useState(null);
+  const [manualRows, setManualRows] = useState([]);
+  const [result, setResult] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  const listTypes = ['TERRORIST', 'EXTREMIST', 'SANCTIONS_RU', 'SANCTIONS_EU', 'ROSFINMONITORING'];
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = JSON.parse(evt.target.result);
+        if (data.entries && Array.isArray(data.entries)) {
+          setJsonData(data.entries);
+          setMessage(null);
+        } else {
+          setMessage({ type: 'danger', text: 'JSON должен содержать поле "entries" с массивом' });
+        }
+      } catch {
+        setMessage({ type: 'danger', text: 'Неверный формат JSON' });
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleImportJson = async () => {
+    if (!jsonData || jsonData.length === 0) return;
+    setImporting(true);
+    try {
+      const res = await api.post('/blacklist/import', { entries: jsonData });
+      setResult(res.data);
+      setJsonData(null);
+    } catch (err) {
+      setMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка импорта' });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const addManualRow = () => {
+    setManualRows([...manualRows, { fullName: '', birthDate: '', passportNumber: '', listType: 'TERRORIST' }]);
+  };
+
+  const updateManualRow = (index, field, value) => {
+    const updated = [...manualRows];
+    updated[index][field] = value;
+    setManualRows(updated);
+  };
+
+  const removeManualRow = (index) => {
+    setManualRows(manualRows.filter((_, i) => i !== index));
+  };
+
+  const handleImportManual = async () => {
+    const valid = manualRows.filter((r) => r.fullName.trim());
+    if (valid.length === 0) {
+      setMessage({ type: 'danger', text: 'Добавьте хотя бы одну запись' });
+      return;
+    }
+    setImporting(true);
+    try {
+      const res = await api.post('/blacklist/import', { entries: valid });
+      setResult(res.data);
+      setManualRows([]);
+    } catch (err) {
+      setMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка импорта' });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="page-header">
+        <h4>Массовый импорт в чёрный список</h4>
+      </div>
+
+      {message && <div className={`alert alert-${message.type} py-2`}>{message.text}</div>}
+
+      {result && (
+        <div className="alert alert-info">
+          <strong>Результат:</strong> Импортировано: {result.imported}, Пропущено: {result.skipped}, Ошибок: {result.errors}
+          {result.errorMessages?.length > 0 && (
+            <ul className="mt-2 mb-0">
+              {result.errorMessages.map((msg, i) => <li key={i}>{msg}</li>)}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {/* Section 1: JSON File Upload */}
+      <div className="content-card mb-4">
+        <h5>Загрузка JSON файла</h5>
+        <p className="text-muted">Загрузите JSON файл с массивом записей в поле "entries"</p>
+        <div className="json-example mb-3">{`{
+  "entries": [
+    {
+      "fullName": "Иванов Иван Иванович",
+      "birthDate": "1980-05-15",
+      "passportNumber": "4510 123456",
+      "listType": "TERRORIST"
+    }
+  ]
+}`}</div>
+        <input type="file" accept=".json" className="form-control mb-3" onChange={handleFileUpload} />
+
+        {jsonData && (
+          <>
+            <h6>Предпросмотр ({jsonData.length} записей)</h6>
+            <div className="table-responsive" style={{ maxHeight: 300, overflowY: 'auto' }}>
+              <table className="table table-sm table-striped">
+                <thead>
+                  <tr><th>ФИО</th><th>Дата рождения</th><th>Паспорт</th><th>Тип списка</th></tr>
+                </thead>
+                <tbody>
+                  {jsonData.map((entry, i) => (
+                    <tr key={i}>
+                      <td>{entry.fullName}</td>
+                      <td>{entry.birthDate || '-'}</td>
+                      <td>{entry.passportNumber || '-'}</td>
+                      <td>{entry.listType}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button className="btn btn-success mt-2" onClick={handleImportJson} disabled={importing}>
+              {importing ? <span className="spinner-border spinner-border-sm me-1"></span> : null}
+              Импортировать {jsonData.length} записей
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Section 2: Manual Bulk Add */}
+      <div className="content-card">
+        <h5>Ручное добавление</h5>
+        <button className="btn btn-outline-primary btn-sm mb-3" onClick={addManualRow}>+ Добавить строку</button>
+
+        {manualRows.length > 0 && (
+          <>
+            <div className="table-responsive">
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>ФИО</th>
+                    <th>Дата рождения</th>
+                    <th>Паспорт</th>
+                    <th>Тип списка</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {manualRows.map((row, i) => (
+                    <tr key={i}>
+                      <td>
+                        <input type="text" className="form-control form-control-sm" value={row.fullName}
+                          onChange={(e) => updateManualRow(i, 'fullName', e.target.value)} />
+                      </td>
+                      <td>
+                        <input type="date" className="form-control form-control-sm" value={row.birthDate}
+                          onChange={(e) => updateManualRow(i, 'birthDate', e.target.value)} />
+                      </td>
+                      <td>
+                        <input type="text" className="form-control form-control-sm" value={row.passportNumber}
+                          onChange={(e) => updateManualRow(i, 'passportNumber', e.target.value)} />
+                      </td>
+                      <td>
+                        <select className="form-select form-select-sm" value={row.listType}
+                          onChange={(e) => updateManualRow(i, 'listType', e.target.value)}>
+                          {listTypes.map((lt) => <option key={lt} value={lt}>{lt}</option>)}
+                        </select>
+                      </td>
+                      <td>
+                        <button className="btn btn-sm btn-outline-danger" onClick={() => removeManualRow(i)}>×</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button className="btn btn-success" onClick={handleImportManual} disabled={importing}>
+              {importing ? <span className="spinner-border spinner-border-sm me-1"></span> : null}
+              Импортировать всё
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+================================================================================
+FILE: front/src/pages/UsersPage.js
+================================================================================
+import React, { useState } from 'react';
+import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+
+export default function UsersPage() {
+  const { user } = useAuth();
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ name: '', password: '', email: '', role: 'OPERATOR' });
+  const [message, setMessage] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const resetForm = () => {
+    setForm({ name: '', password: '', email: '', role: 'OPERATOR' });
+    setMessage(null);
+  };
+
+  const handleSave = async () => {
+    if (!form.name || !form.password || form.password.length < 8) {
+      setMessage({ type: 'danger', text: 'Имя и пароль (мин. 8 символов) обязательны' });
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.post('/auth/register', form);
+      setMessage({ type: 'success', text: `Пользователь "${form.name}" создан` });
+      setShowModal(false);
+      resetForm();
+    } catch (err) {
+      setMessage({ type: 'danger', text: err.response?.data?.message?.[0] || 'Ошибка' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="page-header">
+        <h4>Пользователи системы</h4>
+        <button className="btn btn-primary" style={{ background: 'var(--primary)', borderColor: 'var(--primary)' }}
+          onClick={() => { resetForm(); setShowModal(true); }}>
+          + Добавить пользователя
+        </button>
+      </div>
+
+      {message && <div className={`alert alert-${message.type} py-2`}>{message.text}</div>}
+
+      <div className="content-card">
+        <p className="text-muted">
+          Управление пользователями осуществляется через API. Текущий пользователь: <strong>{user?.username}</strong> ({user?.role}).
+        </p>
+        <p className="text-muted">Для просмотра полного списка пользователей необходим отдельный API endpoint.</p>
+      </div>
+
+      {showModal && (
+        <>
+          <div className="modal-backdrop fade show" onClick={() => setShowModal(false)}></div>
+          <div className="modal fade show d-block" tabIndex="-1">
+            <div className="modal-dialog" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Добавить пользователя</h5>
+                  <button className="btn-close" onClick={() => setShowModal(false)}></button>
+                </div>
+                <div className="modal-body">
+                  {message && <div className={`alert alert-${message.type} py-2`}>{message.text}</div>}
+                  <div className="mb-3">
+                    <label className="form-label">Имя пользователя *</label>
+                    <input type="text" className="form-control" value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Пароль * (мин. 8 символов)</label>
+                    <input type="password" className="form-control" value={form.password}
+                      onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Email</label>
+                    <input type="email" className="form-control" value={form.email}
+                      onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Роль</label>
+                    <select className="form-select" value={form.role}
+                      onChange={(e) => setForm({ ...form, role: e.target.value })}>
+                      <option value="ADMIN">ADMIN</option>
+                      <option value="OPERATOR">OPERATOR</option>
+                      <option value="COMPLIANCE_OFFICER">COMPLIANCE_OFFICER</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Отмена</button>
+                  <button className="btn btn-primary" onClick={handleSave} disabled={saving}
+                    style={{ background: 'var(--primary)', borderColor: 'var(--primary)' }}>
+                    {saving ? <span className="spinner-border spinner-border-sm me-1"></span> : null}
+                    Сохранить
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

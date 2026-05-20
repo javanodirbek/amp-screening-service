@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: aml_postgres
+    environment:
+      POSTGRES_DB: aml
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1111
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aml"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: aml_app
+    ports:
+      - "7777:7777"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/aml
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 1111
+      JWT_SECRET: 3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b
+      SCREENING_THRESHOLD: 0.80
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

@@ -1,0 +1,567 @@
+================================================================================
+  AML SCREENING SERVICE — TO'LIQ DEPLOYMENT QO'LLANMA
+  Local Docker → Build → Render.com + Vercel
+================================================================================
+
+Mundarija:
+  Faza 1  — Lokal Docker’da ishga tushirish
+  Faza 2  — JAR faylni build qilish
+  Faza 3  — Bepul hosting xizmatlarini taqqoslash
+  Faza 4  — Backend’ni Render.com’ga deploy qilish
+  Faza 5  — Frontend’ni Vercel’ga deploy qilish
+  Faza 6  — CORS production sozlamalari
+  Faza 7  — JWT Token va xavfsizlik konfiguratsiyasi
+  Faza 8  — Environment o‘zgaruvchilar (barchasi bir joyda)
+  Faza 9  — Tekshirish va test qilish
+  Faza 10 — Xatoliklar va yechimlar (Troubleshooting)
+
+================================================================================
+FAZA 1: LOKAL DOCKER'DA ISHGA TUSHIRISH
+================================================================================
+
+1.1. Kerakli dasturlarni o'rnatish:
+  - Docker Desktop: https://www.docker.com/products/docker-desktop/
+  - Java 21 (mavjud bo'lsa kerak, Gradle build uchun)
+  - Node.js 18+ (frontend uchun)
+
+1.2. Docker Compose bilan ishga tushirish:
+
+  # Loyiha papkasiga o'tamiz (docker-compose.yml turgan joy)
+  cd /Users/user/IdeaProjects/aml-stms-web-app/aml-diploma-project
+
+  # Oldin build qilamiz
+  docker compose build
+
+  # Ishga tushiramiz (background mode)
+  docker compose up -d
+
+  # Holatini tekshiramiz
+  docker compose ps
+
+  # Loglarni ko'rish
+  docker compose logs -f app
+
+  Natija:
+    - PostgreSQL: localhost:5433 da ishlaydi
+    - Backend:    localhost:7777 da ishlaydi
+    - Ma'lumotlar: volumes/postgres_data papkasida saqlanadi
+
+1.3. To'xtatish:
+
+  docker compose down          # konteynerlarni to'xtatish
+  docker compose down -v        # konteynerlar + ma'lumotlar bazasini o'chirish
+
+1.4. Frontend'ni alohida ishga tushirish:
+
+  cd front
+  npm install
+  npm start
+  # http://localhost:3000 da ochiladi
+
+
+================================================================================
+FAZA 2: JAR FAYLNI BUILD QILISH
+================================================================================
+
+2.1. Gradle bilan back-end JAR yaratish:
+
+  # Loyiha ildiz papkasida (build.gradle turgan joy)
+  cd /Users/user/IdeaProjects/aml-stms-web-app/aml-diploma-project
+
+  # Testlarni o'tkazib yuborib build qilish (tezroq)
+  ./gradlew bootJar -x test
+
+  # Agar testlar kerak bo'lsa:
+  ./gradlew bootJar
+
+2.2. Build natijasi:
+  JAR fayl bu yerda yaratiladi:
+    build/libs/screening-service-0.0.1-SNAPSHOT.jar
+
+2.3. JAR faylni qo'lda ishga tushirish (Dockersiz):
+
+  java -jar build/libs/screening-service-0.0.1-SNAPSHOT.jar
+
+  Eslatma: Buning uchun PostgreSQL lokalda ishlab turishi kerak (localhost:5432).
+
+
+================================================================================
+FAZA 3: BEPUL HOSTING XIZMATLARINI TAQQOSLASH
+================================================================================
+
+                     Render.com    Railway      Fly.io       Koyeb        Heroku
+─────────────────────────────────────────────────────────────────────────────────
+Backend (Docker)     ✅ Zo'r        ✅ Yaxshi    ✅ Yaxshi    ✅ Yaxshi     ❌ Pulsiz
+PostgreSQL           ✅ 90 kun     ❌ $5/oy     ❌ alohida  ❌ alohida    ❌ $5/oy
+bekor
+Static Frontend      ❌            ❌           ❌           ❌            ❌
+GitHub CI/CD         ✅ Auto       ✅ Auto      ✅ flyctl    ✅ Auto       ✅ Auto
+Osonlik              ⭐⭐⭐⭐⭐      ⭐⭐⭐⭐       ⭐⭐⭐        ⭐⭐⭐         ⭐⭐⭐⭐
+Limitlar             750 soat/oy   $5 kredit   3 ta app     $5 kredit    Yo'q
+Kechikish (sleep)    Bor (30s)     Yo'q         Yo'q         Yo'q          Bor (30s)
+
+TAVSIYA:
+  Backend  → Render.com   (eng oson Docker deploy + bepul PostgreSQL 90 kun)
+  Frontend → Vercel       (bepul static hosting, GitHub'dan auto-deploy, global CDN)
+
+Nega bu kombinatsiya?
+  - Render.com: Dockerfile ni ko'rib o'zi build qiladi, hech qanday qo'shimcha configsiz.
+    PostgreSQL bepul free tier (90 kundan keyin Render pullik).
+    PostgreSQL tugagach, Railway yoki Fly.io'ga ko'chish yoki Render'da to'lash ($7/oy).
+  - Vercel: Statik sayt uchun eng yaxshi — GitHub'ga push qilsangiz avtomatik deploy bo'ladi.
+    Bepul, HTTPS bor, global CDN.
+  - Agar Vercel'ni xohlamasangiz, Netlify ham xuddi shunday imkoniyat beradi.
+
+
+================================================================================
+FAZA 4: BACKEND'NI RENDER.COM'GA DEPLOY QILISH
+================================================================================
+
+4.1. GitHub'ga yuklash (oldin):
+
+  git add .
+  git commit -m "ready for render deployment"
+  git push origin develop
+  # yoki main branchga merge qiling
+
+4.2. Render.com'da ro'yxatdan o'tish:
+  https://dashboard.render.com/register
+  GitHub hisobingiz bilan kiring (osonroq).
+
+4.3. PostgreSQL ma'lumotlar bazasini yaratish:
+
+  a) Render Dashboard → New → PostgreSQL
+  b) Sozlamalar:
+     - Name: aml-postgres-db
+     - Database: aml
+     - User: postgres
+     - Region: Frankfurt (Europe) — eng yaqin
+     - Plan: Free
+  c) "Create Database" tugmasini bosing
+  d) Yaratilgandan keyin "Internal Database URL" va "External Database URL" ni
+     ko'chirib oling. Ular quyidagi ko'rinishda bo'ladi:
+
+     Internal: postgresql://postgres:XXXX@dpg-xxxxx/aml
+     External: postgresql://postgres:XXXX@dpg-xxxxx.oregon-postgres.render.com/aml
+
+  e) Muhim: "PSQL Command" ni ochib, quyidagi trigger yaratish kerak.
+     Sababi: Spring `ddl-auto: update` ishlatgani uchun hibernate sequence
+     va relationlarni yaratadi, lekin ba'zida constraint'lar bilan muammo bo'ladi.
+     Render PostgreSQL konsolida:
+
+     -- Agar kerak bo'lsa qo'lda schema yaratish:
+     CREATE SCHEMA IF NOT EXISTS public;
+
+4.4. Web Service yaratish (Backend):
+
+  a) Render Dashboard → New → Web Service
+  b) GitHub'dan loyihangiz reposini tanlang
+  c) Sozlamalar:
+     - Name: aml-backend
+     - Region: Frankfurt (Europe) — PostgreSQL bilan bir xil bo'lsin
+     - Branch: main (yoki develop)
+     - Root Directory: (bo'sh qoldiring)
+     - Runtime: Docker
+     - Plan: Free
+
+  d) Environment Variables (BU MUHIM):
+
+     SPRING_DATASOURCE_URL    = jdbc:postgresql://<INTERNAL_DATABASE_URL>:5432/aml
+     SPRING_DATASOURCE_USERNAME = postgres
+     SPRING_DATASOURCE_PASSWORD = <PostgreSQL paroli, Render ko'rsatadi>
+     JWT_SECRET               = 3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b
+     SCREENING_THRESHOLD      = 0.80
+
+     IZOH: SPRING_DATASOURCE_URL uchun INTERNAL URL ni ishlating (External EMAS).
+     Internal URL bu: dpg-xxxxx (hostname)
+     Misol: jdbc:postgresql://dpg-xxxxx:5432/aml
+
+  e) "Create Web Service" tugmasini bosing
+  f) Render log'ini kuzating — Docker image build bo'ladi va deploy bo'ladi
+  g) Deploy bo'lgan URL: https://aml-backend.onrender.com
+
+4.5. Render.com Free Tier cheklovlari:
+  - Web Service: 750 soat/oy (bir oyda 744 soat bor → 1 ta service uchun yetarli)
+  - PostgreSQL: 90 kun bepul, keyin o'chib ketadi (ma'lumotlarni backup qiling!)
+  - Service 15 daqiqa ishlatilmasa "uxlab qoladi", keyingi requestda 30-60 soniya uyg'onadi
+  - Storage: 1 GB (PostgreSQL)
+
+4.6. Render'ning "uyqu" muammosini hal qilish:
+  - UptimeRobot (https://uptimerobot.com) orqali har 5 daqiqada ping qiling.
+  - Yoki cron-job.org orqali har 10 daqiqada request yuboring.
+  - Bu service'ni doimiy "uyg'oq" ushlab turadi (bepul).
+
+
+================================================================================
+FAZA 5: FRONTEND'NI VERCEL'GA DEPLOY QILISH
+================================================================================
+
+5.1. Frontend'ni production build qilishdan oldin tayyorlash:
+
+  a) front/package.json fayliga "homepage" qo'shing (Vercel uchun kerak emas,
+     lekin GitHub Pages uchun kerak bo'lishi mumkin):
+
+  b) front/src/api/axios.js — backend URL'ni production URL'ga o'zgartiring:
+
+     // Local:
+     // baseURL: 'http://localhost:7777'
+
+     // Production (Render backend):
+     baseURL: 'https://aml-backend.onrender.com'
+
+     IZOH: Buni environment variable orqali dinamik qilish ham mumkin (quyida).
+
+5.2. Axios baseURL'ni dinamik qilish (ixtiyoriy, lekin tavsiya):
+
+  front/src/api/axios.js ni quyidagicha o'zgartiring:
+
+  import axios from 'axios';
+
+  const getBaseUrl = () => {
+    // Production build'da REACT_APP_API_URL ni oladi,
+    // localhost'da esa default localhost:7777
+    return process.env.REACT_APP_API_URL || 'http://localhost:7777';
+  };
+
+  const api = axios.create({
+    baseURL: getBaseUrl(),
+  });
+
+  // ... qolgan interceptor kodlar o'zgarmaydi
+  export default api;
+
+  Keyin Vercel'da Environment Variable sifatida qo'shing:
+    REACT_APP_API_URL = https://aml-backend.onrender.com
+
+  Local rivojlantirishda REACT_APP_API_URL ni .env.local faylga yozing:
+    REACT_APP_API_URL=http://localhost:7777
+
+5.3. Vercel'ga deploy qilish:
+
+  a) https://vercel.com saytiga kiring, GitHub bilan ro'yxatdan o'ting
+  b) "Add New" → "Project"
+  c) GitHub repo'ni tanlang
+  d) Sozlamalar:
+     - Framework Preset: Create React App
+     - Root Directory: front
+     - Build Command: npm run build
+     - Output Directory: build
+  e) Environment Variables:
+     - REACT_APP_API_URL = https://aml-backend.onrender.com
+  f) "Deploy" tugmasini bosing
+  g) Deploy tugagach, Vercel URL beradi: https://aml-frontend.vercel.app
+
+5.4. Muqobil: Netlify'ga deploy qilish
+
+  a) https://app.netlify.com → "Add new site" → "Import an existing project"
+  b) GitHub repo'ni tanlang
+  c) Build settings:
+     - Base directory: front
+     - Build command: npm run build
+     - Publish directory: front/build
+  d) Environment variables:
+     - REACT_APP_API_URL = https://aml-backend.onrender.com
+  e) Deploy
+
+  Netlify Vercel'dan bir oz farqli:
+  - Netlify bepul 100 GB bandwidth beradi
+  - Vercel 100 GB bandwidth + 6000 build daqiqa/oy
+  - Ikkalasi ham juda yaxshi, deyarli farqi yo'q kichik loyiha uchun
+
+5.5. Muqobil: GitHub Pages (bepul, oddiy)
+
+  a) front/package.json fayliga qo'shing:
+     "homepage": "https://<foydalanuvchi-nomi>.github.io/aml-screening-frontend/"
+
+  b) GitHub Pages'ga deploy qilish uchun package.json scripts'ga qo'shing:
+     "predeploy": "npm run build",
+     "deploy": "gh-pages -d build"
+
+  c) npm install gh-pages --save-dev
+  d) npm run deploy
+
+
+================================================================================
+FAZA 6: CORS PRODUCTION SOZAMALARI
+================================================================================
+
+6.1. Backend'da CORS konfiguratsiyasi:
+
+  src/main/java/aml/code/screeningservice/config/SecurityConfig.java yoki
+  alohida CORS config klassi mavjud bo'lsa, unga production URL'larni qo'shing:
+
+  @Bean
+  public WebMvcConfigurer corsConfigurer() {
+      return new WebMvcConfigurer() {
+          @Override
+          public void addCorsMappings(CorsRegistry registry) {
+              registry.addMapping("/**")
+                  .allowedOrigins(
+                      "http://localhost:3000",                      // Local frontend
+                      "https://aml-frontend.vercel.app",             // Vercel
+                      "https://foydalanuvchi-nomi.netlify.app"       // Netlify (agar ishlatsangiz)
+                  )
+                  .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+                  .allowedHeaders("*")
+                  .allowCredentials(true);
+          }
+      };
+  }
+
+  IZOH: Har safar yangi frontend URL qo'shganingizda CORS'ga qo'shib
+  backend'ni qayta deploy qilishingiz kerak.
+
+6.2. Muhim: CORS xavfsizlik qoidalari:
+  - Hech qachon .allowedOrigins("*") ISHLATMANG (xavfsizlik xatosi).
+  - allowCredentials(true) bilan aniq URL'lar berish shart.
+
+
+================================================================================
+FAZA 7: JWT TOKEN VA XAVFSIZLIK KONFIGURATSIYASI
+================================================================================
+
+7.1. JWT nima va qanday ishlaydi?
+
+  Login → Backend username/password tekshiradi → JWT token yaratadi → Frontend'ga qaytaradi
+  ↓
+  Frontend har bir API so'rovda token'ni Authorization header'da yuboradi:
+    Authorization: Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsInJvbGUi...
+  ↓
+  Backend token'ni tekshiradi → foydalanuvchi identifikatsiya qilinadi → javob qaytariladi
+
+7.2. Token tarkibi (payload):
+
+  {
+    "sub": "admin",              // username
+    "role": "ROLE_ADMIN",        // foydalanuvchi roli
+    "authorities": ["ROLE_ADMIN"],
+    "iat": 1715000000,           // yaratilgan vaqti (Unix timestamp)
+    "exp": 1715086400            // tugash vaqti (24 soat keyin)
+  }
+
+7.3. Frontend'da JWT token saqlash:
+
+  Tokenni localStorage yoki sessionStorage'da saqlash xavfsizlik jihatidan
+  ideal EMAS (XSS hujumlariga zaif). Lekin kichik loyihalar uchun yetarli.
+
+  AuthContext.js da token saqlash:
+    localStorage.setItem('token', jwtToken);
+    localStorage.setItem('refreshToken', refreshToken);
+
+  Har bir so'rovda token qo'shish (axios.js interceptor):
+    axios.interceptors.request.use((config) => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    });
+
+7.4. Token muddati tugaganda:
+
+  Response interceptor (axios.js):
+    401 (Unauthorized) qaytganda → avtomatik logout → login sahifasiga qaytarish
+
+    axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
+      }
+    );
+
+7.5. JWT Secret konfiguratsiyasi:
+
+  application.properties da:
+    jwt.token.secret=3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b
+
+  XAVFSIZLIK UCHUN:
+    - Production'da bu secret'ni environment variable orqali bering (JWT_SECRET)
+    - Hech qachon secret'ni GitHub'ga push qilmang
+    - Secret kamida 256 bit (32 bayt) bo'lishi kerak
+    - Yangi secret generatsiya qilish (Linux/Mac):
+      openssl rand -hex 32
+
+  Render.com'da environment variable:
+    JWT_SECRET = 3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b
+
+7.6. Rollar va ruxsatlar:
+
+  ADMIN              — hamma narsaga ruxsat (CRUD, user management, import)
+  OPERATOR           — ko'rish + client qo'shish + tranzaksiya yaratish
+  COMPLIANCE_OFFICER — ko'rish + blacklist tahrirlash + tranzaksiyani tasdiqlash/rad etish
+
+  Har bir endpoint @PreAuthorize annotatsiyasi bilan himoyalangan:
+    @PreAuthorize("hasAnyRole('ADMIN')")              // faqat ADMIN
+    @PreAuthorize("hasAnyRole('ADMIN','OPERATOR', 'COMPLIANCE_OFFICER')")  // hamma rollar
+
+7.7. Token'ni manual dekodlash (tekshirish uchun):
+
+  https://jwt.io saytiga kiring
+  → Token'ni paste qiling
+  → Payload'ni ko'rasiz (role, sub, exp)
+
+  Yoki terminalda:
+
+    # Base64 payload qismini dekodlash
+    TOKEN="sizning.token.qiymatingiz"
+    echo $TOKEN | cut -d'.' -f2 | base64 -d 2>/dev/null | python3 -m json.tool
+
+
+================================================================================
+FAZA 8: ENVIRONMENT O'ZGARUVCHILAR (BARCHASI BIR JOYDA)
+================================================================================
+
+8.1. Backend environment variable'lar (Render.com yoki Railway):
+
+  O'zgaruvchi                          Qiymati
+  ────────────────────────────────────────────────────────────────────────────
+  SPRING_DATASOURCE_URL                jdbc:postgresql://<host>:5432/aml
+  SPRING_DATASOURCE_USERNAME           postgres
+  SPRING_DATASOURCE_PASSWORD           <render bergan parol>
+  JWT_SECRET                           3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b
+  SCREENING_THRESHOLD                  0.80
+
+8.2. Frontend environment variable'lar (Vercel yoki Netlify):
+
+  O'zgaruvchi              Qiymati
+  ─────────────────────────────────────────────────────
+  REACT_APP_API_URL        https://aml-backend.onrender.com
+
+8.3. Docker Compose environment (lokal uchun):
+
+  docker-compose.yml da:
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/aml
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: 1111
+      JWT_SECRET: 3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b
+      SCREENING_THRESHOLD: 0.80
+
+
+================================================================================
+FAZA 9: TEKSHIRISH VA TEST QILISH
+================================================================================
+
+9.1. Backend ishlayotganini tekshirish:
+
+  # Health check endpoint
+  curl https://aml-backend.onrender.com/actuator/health
+
+  # Auth endpoint (login test)
+  curl -X POST https://aml-backend.onrender.com/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"username":"admin","password":"admin123"}'
+
+  # Javobda token keladi:
+  # {
+  #   "token": "eyJhbGciOiJIUzM4NCJ9...",
+  #   "refreshToken": "eyJhbGciOiJIUzM4NCJ9...",
+  #   "role": "ADMIN"
+  # }
+
+9.2. Frontend tekshirish:
+
+  a) Vercel bergan URL'ni brauzerda oching
+  b) Login sahifasi ochilishi kerak
+  c) Ro'yxatdan o'tish tugmasini bosib, admin foydalanuvchi yarating
+  d) Login qiling
+  e) Dashboard sahifasi ochilishi kerak
+
+9.3. Backend monitoring (Render.com):
+
+  Render Dashboard → aml-backend → Logs
+  Bu yerda barcha server log'larini ko'rishingiz mumkin.
+
+
+================================================================================
+FAZA 10: XATOLIKLAR VA YECHIMLAR (TROUBLESHOOTING)
+================================================================================
+
+10.1. "Invalid CORS request" yoki CORS xatoligi:
+
+  Sabab: Frontend URL backend'ning CORS allow ro'yxatida yo'q.
+  Yechim: Backend CORS konfiguratsiyasiga frontend URL'ni qo'shing va qayta deploy qiling.
+
+10.2. "Connection refused" yoki "ERR_CONNECTION_REFUSED":
+
+  Sabab: Backend ishlamayapti yoki noto'g'ri URL.
+  Yechim: Render log'ni tekshiring, service "Active" holatida ekanligini tekshiring.
+  Service uxlagan bo'lsa, 30-60 soniya kuting va qayta urinib ko'ring.
+
+10.3. "401 Unauthorized":
+
+  Sabab: Token muddati o'tgan yoki yaroqsiz.
+  Yechim: Qayta login qiling. Agar takrorlansa, JWT_SECRET qiymatini tekshiring.
+  Backend va token generatsiyasi bir xil secret ishlatayotganiga ishonch hosil qiling.
+
+10.4. "500 Internal Server Error":
+
+  Sabab: Server ichki xatosi.
+  Yechim: Render log'ni ochib, to'liq xatolik stack trace'ni o'qing.
+  Ko'p hollarda:
+  - Ma'lumotlar bazasi ulanishida muammo
+  - Noto'g'ri SQL so'rov
+  - Null pointer exception
+
+10.5. "Cannot connect to database" yoki "FATAL: database does not exist":
+
+  Sabab: SPRING_DATASOURCE_URL noto'g'ri yoki ma'lumotlar bazasi yaratilmagan.
+  Yechim:
+  - Render'da PostgreSQL service ishlayotganini tekshiring
+  - Internal va External URL farqini tushuning:
+    - Internal: faqat Render ichidagi servicelar uchun (backend <-> db)
+    - External: sizning kompyuteringizdan ulanish uchun (pgAdmin, DBeaver)
+
+10.6. Frontend "blank page" yoki oq sahifa:
+
+  Sabab: React build xatosi yoki routelar noto'g'ri.
+  Yechim:
+  - Vercel'da Build Log ni tekshiring
+  - package.json da "homepage" to'g'ri ekanligini tekshiring (agar GitHub Pages)
+  - Browser console'ni oching (F12 → Console) va xatoliklarni o'qing
+
+10.7. "REACT_APP_API_URL is not defined":
+
+  Sabab: Environment variable Vercel'dagi build vaqtida mavjud emas.
+  Yechim:
+  - Vercel → Project → Settings → Environment Variables
+  - REACT_APP_API_URL qo'shing va qayta deploy qiling
+  - Environment variable qo'shilgandan keyin ALBATTA qayta deploy qiling
+    (mavjud build'ga qo'shilsa ishlamaydi)
+
+10.8. PostgreSQL 90 kundan keyin o'chib ketganda nima qilish?
+
+  a) Ma'lumotlarni backup qiling:
+     Render → PostgreSQL → "Export" yoki pg_dump orqali
+
+  b) Yangi PostgreSQL yarating (Render'da pullik yoki Railway'da yangi bepul)
+
+  c) Yoki Railway'ga ko'chib o'ting (bepul PostgreSQL yo'q, lekin $5 kredit har oy)
+
+  d) Yoki lokalda Docker'da PostgreSQL ishlating va backend'ni
+     faqat API sifatida Render'da qoldiring (lekin bu sekin — network latency)
+
+================================================================================
+XULOSA: QADAM-QADAM YO'L XARITASI
+================================================================================
+
+  1. [ ] Kodni GitHub'ga push qiling
+  2. [ ] Render.com'da PostgreSQL yarating
+  3. [ ] Render.com'da Web Service yarating (backend, Docker orqali)
+  4. [ ] Environment variable'larni to'g'ri to'ldiring
+  5. [ ] Backend deploy bo'lishini kuting
+  6. [ ] Backend URL'ni tekshiring (curl bilan)
+  7. [ ] Frontend'da REACT_APP_API_URL ni backend URL'ga o'zgartiring
+  8. [ ] Vercel'ga frontend'ni deploy qiling
+  9. [ ] Frontend URL'ni brauzerda ochib tekshiring
+  10. [ ] Admin foydalanuvchi yarating (Register → Login)
+  11. [ ] Barcha sahifalarni test qiling
+  12. [ ] Render.com CORS'ga frontend URL'ni qo'shing
+  13. [ ] UptimeRobot orqali monitoring qo'shing (free tier uyqudan saqlash uchun)
+
+================================================================================
