@@ -16,6 +16,7 @@ import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.text.Normalizer;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,6 +33,10 @@ public class ScreeningService {
     @Value("${screening.threshold:0.80}")
     private double threshold;
 
+    // Summa limitlari
+    private static final BigDecimal AMOUNT_BLOCK_THRESHOLD   = new BigDecimal("50000");
+    private static final BigDecimal AMOUNT_REVIEW_THRESHOLD  = new BigDecimal("10000");
+
     public void screen(Transaction transaction) {
         log.info("Starting screening for transaction ID: {}", transaction.getId());
 
@@ -39,6 +44,24 @@ public class ScreeningService {
         transactionRepository.save(transaction);
         log.debug("Transaction status changed to CHECKING");
 
+        // 1. SUMMA BO'YICHA TEKSHIRUV
+        BigDecimal amount = transaction.getAmount();
+        if (amount != null) {
+            if (amount.compareTo(AMOUNT_BLOCK_THRESHOLD) >= 0) {
+                log.warn("Transaction {} BLOCKED_AUTO by amount: {} >= {}",
+                        transaction.getId(), amount, AMOUNT_BLOCK_THRESHOLD);
+                createAmountBlockResult(transaction, amount, "AMOUNT_BLOCK");
+                return;
+            }
+            if (amount.compareTo(AMOUNT_REVIEW_THRESHOLD) >= 0) {
+                log.warn("Transaction {} set to UNDER_REVIEW by amount: {} >= {}",
+                        transaction.getId(), amount, AMOUNT_REVIEW_THRESHOLD);
+                createAmountReviewResult(transaction, amount);
+                return;
+            }
+        }
+
+        // ISM BO'YICHA BLACKLIST TEKSHIRUV
         String recipientName = transaction.getRecipientName();
         log.info("Checking recipient: {}", maskFio(recipientName));
         String normalizedRecipient = normalizeText(recipientName);
@@ -101,6 +124,48 @@ public class ScreeningService {
             createClearResultWithScore(transaction, maxScore);
         }
     }
+    /**
+     * AMOUNT BLOCK — summa $50,000 dan yuqori bo'lganda BLOCKED_AUTO
+     */
+    private void createAmountBlockResult(Transaction transaction, BigDecimal amount, String algorithm) {
+        CheckResult checkResult = new CheckResult();
+        checkResult.setTransaction(transaction);
+        checkResult.setMatchScore(1.0);
+        checkResult.setResult(MatchResult.HIT);
+        checkResult.setThreshold(threshold);
+        checkResult.setCheckDate(LocalDateTime.now());
+        checkResult.setAlgorithm(algorithm);
+        checkResult.setMatchedEntry(null);
+        checkResultRepository.save(checkResult);
+
+        transaction.setStatus(TransactionStatus.BLOCKED_AUTO);
+        transaction.setUpdatedAt(LocalDateTime.now());
+        transactionRepository.save(transaction);
+
+        log.warn("Transaction {} BLOCKED_AUTO due to high amount: {}", transaction.getId(), amount);
+    }
+
+    /**
+     * AMOUNT REVIEW — summa $10,000 dan yuqori bo'lganda UNDER_REVIEW
+     */
+    private void createAmountReviewResult(Transaction transaction, BigDecimal amount) {
+        CheckResult checkResult = new CheckResult();
+        checkResult.setTransaction(transaction);
+        checkResult.setMatchScore(0.0);
+        checkResult.setResult(MatchResult.CLEAR);
+        checkResult.setThreshold(threshold);
+        checkResult.setCheckDate(LocalDateTime.now());
+        checkResult.setAlgorithm("AMOUNT_REVIEW");
+        checkResult.setMatchedEntry(null);
+        checkResultRepository.save(checkResult);
+
+        transaction.setStatus(TransactionStatus.UNDER_REVIEW);
+        transaction.setUpdatedAt(LocalDateTime.now());
+        transactionRepository.save(transaction);
+
+        log.warn("Transaction {} set to UNDER_REVIEW due to amount: {}", transaction.getId(), amount);
+    }
+
     /**
      * CLEAR result yaratish (blacklist bo'sh bo'lganda)
      */
