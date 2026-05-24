@@ -129,7 +129,7 @@ The project demonstrates an end-to-end implementation of a regulated-industry wo
 - **Stateless** sessions, JWT in `Authorization: Bearer` header
 - Whitelisted endpoints: `/auth/login`, `/auth/register`
 - All other endpoints protected by JWT filter + `@PreAuthorize` per-method authorization
-- CORS configured for `localhost:3000`, `localhost:8080`, `localhost:7777`
+- CORS configured for Vercel frontend domain (configurable via `CORS_ALLOWED_ORIGINS` env variable)
 
 ---
 
@@ -195,7 +195,21 @@ This dual-algorithm approach is robust against:
 
 ---
 
-## 🚀 Getting Started
+## 🌐 Live Demo
+
+| Service | URL |
+|---------|-----|
+| **Frontend** | [https://front-aml.vercel.app](https://front-aml.vercel.app) |
+| **Backend API** | [render.com](render.com) |
+
+### Demo credentials
+| Role | Username | Password |
+|------|----------|----------|
+| Admin | `admin` | `admin123` |
+
+---
+
+
 
 ### Prerequisites
 - JDK **21**
@@ -308,7 +322,3 @@ Built with care as a graduation project.
 If this project helped you or you'd like to chat about backend engineering, AML / compliance tech, or fuzzy matching — feel free to reach out.
 
 ---
-
-## 📄 License
-
-Released under the **MIT License**. See [`LICENSE`](LICENSE) for details.
